@@ -23,6 +23,7 @@ fi
 runs_done=0
 [ -f runs/summary.csv ] && runs_done=$(( $(grep -c . runs/summary.csv) - 1 ))
 if [ "$runs_done" -lt 1 ]; then
+  git add -A && git commit -qm "Setup before run 1" >/dev/null 2>&1 || true
   npm run -s score -- --selftest || fail "scorer selftest"
   npm run -s setup || fail "setup"
   npm run -s run-evals || fail "run 1"

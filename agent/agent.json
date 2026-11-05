@@ -2,8 +2,7 @@
   "name": "silk-board-fixer",
   "description": "Silk Board Fixer: plans the traffic-signal timings at Bengaluru's Silk Board junction, and rewrites its own playbook from what the simulator shows after every run.",
   "model": {
-    "name": "anthropic/claude-sonnet-4-6",
-    "params": { "temperature": 0 }
+    "name": "truefoundry/tfy-managed-claude-sonnet-5-5"
   },
   "skill_mode": "inline"
 }
