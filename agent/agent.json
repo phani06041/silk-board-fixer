@@ -4,5 +4,5 @@
   "model": {
     "name": "truefoundry/tfy-managed-claude-sonnet-5-5"
   },
-  "skill_mode": "inline"
+  "skill_mode": "git"
 }
