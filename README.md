@@ -20,6 +20,8 @@ run-evals ──► simulator report per window & approach ──► improve (ag
 
 **Demo:** a 3D replay of Silk Board where run 1 jams and the learned run flows, same traffic second by second: [`docs/index.html`](docs/index.html) (GitHub Pages: https://phani06041.github.io/silk-board-fixer/).
 
+**Video (68 s):** https://youtu.be/gsxnndaB_pY
+
 | Run | Score | Holdout | Avg wait | What the agent changed before this run |
 |---|---|---|---|---|
 | 1 | 38.3 | 39.1 | 172 s | starting playbook (textbook) |
