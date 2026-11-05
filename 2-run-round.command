@@ -31,6 +31,8 @@ if [ "$runs_done" -lt 1 ]; then
   exit 0
 fi
 
+# Commit any change to the loop itself (scripts, README) separately, so the agent's commit stays its own.
+git add scripts README.md *.command .gitignore package.json 2>/dev/null && git commit -qm "Loop: update scripts" >/dev/null 2>&1 || true
 npm run -s improve || fail "the agent's self-rewrite"
 git show --stat HEAD | head -20
 npm run -s run-evals || fail "next eval run"

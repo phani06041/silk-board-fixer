@@ -71,6 +71,29 @@ const feedback = training
   })
   .join("\n\n");
 
+// The agent's own history: training scores per scenario for every run so far, and what it said it learned each time.
+// Without this it only sees its latest run, so it can't tell when its last change made things worse.
+const history = (() => {
+  const scen = loadTasks().filter((t) => !t.holdout);
+  const lines = [`| run | ${scen.map((t) => t.title).join(" | ")} | training mean |`, `|---|${scen.map(() => "---").join("|")}|---|`];
+  for (let n = 1; n <= run; n++) {
+    const f = join(runDir(n), "results.json");
+    if (!existsSync(f)) continue;
+    const rs = JSON.parse(readFileSync(f, "utf8")) as TaskScore[];
+    const sc = scen.map((t) => rs.find((r) => r.task_id === t.id)?.score ?? 0);
+    lines.push(`| ${n} | ${sc.map((x) => x.toFixed(2)).join(" | ")} | ${(sc.reduce((a, b) => a + b, 0) / sc.length).toFixed(3)} |`);
+  }
+  let learned = "";
+  try {
+    learned = git("log", "--reverse", "--format=- %s: %b", "--", "agent")
+      .split("\n")
+      .filter((l) => l.startsWith("- agent: learn") || (l.trim() && !l.startsWith("Agent-Session") && !l.startsWith("- ")))
+      .join("\n")
+      .replace(/\n(?!- )/g, " ");
+  } catch {}
+  return [lines.join("\n"), "", "What you wrote after each run (oldest first):", learned || "(nothing yet)"].join("\n");
+})();
+
 const prompt = `This message is not a junction to plan. Ignore the Output section of your instructions for this reply.
 
 You are improving your own playbook. Below are your current instruction files, then what happened when the simulator ran your signal plans for the training scenarios in your last run: per window and approach, how many vehicles arrived and got through, how long they waited, the longest queue, and how fast each approach really discharged.
@@ -96,7 +119,14 @@ Reply with each changed file in full, in this format, and nothing else:
 
 ${currentFiles.map((f) => `<<<FILE ${f.path}\n${f.text.trim()}\n>>>`).join("\n\n")}
 
-## What went wrong in run ${nn}
+## Your history
+
+Each "agent: learn" line is a change you made to these files; the run after it used that change.
+If a change made the scores worse, undo or fix that part.
+
+${history}
+
+## What happened in run ${nn}
 
 ${feedback}
 `;
