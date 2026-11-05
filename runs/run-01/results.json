@@ -1,0 +1,236 @@
+[
+  {
+    "task_id": "01-morning-rush",
+    "holdout": false,
+    "reference_delay": 58.875,
+    "score": 0.3832,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 153.66,
+    "blocked": 114,
+    "plan": [
+      {
+        "N": 11,
+        "E": 17,
+        "S": 17,
+        "W": 11
+      },
+      {
+        "N": 12,
+        "E": 20,
+        "S": 20,
+        "W": 12
+      },
+      {
+        "N": 14,
+        "E": 23,
+        "S": 23,
+        "W": 14
+      },
+      {
+        "N": 12,
+        "E": 20,
+        "S": 20,
+        "W": 12
+      }
+    ],
+    "turn_id": "01m6n35w584p758772tprhcmnw",
+    "status": "done",
+    "reply": "The plan is below. I worked it out by hand from the rules you gave, and I haven't run it through a simulator.\n\n**Method**\n- I used 1800 veh/h per lane of green, so N, E and S discharge 5400 veh/h each and W discharges 3600 veh/h.\n- For each approach I took the flow ratio y, which is arrivals divided by capacity. The four ratios sum to Σy for the window.\n- Σy is 0.49 in the 8:30 window, 0.57 at 8:45, 0.63 at 9:00 and 0.52 at 9:15.\n- Lost time is 4 s of all-red for each of the 4 greens, so 16 s per cycle. Total green is the cycle length minus 16 s.\n- I picked the shortest cycle that keeps total green about 25–30% above what the arrivals need. That keeps the per-cycle queue small, and the 40-vehicles-per-lane limit is nowhere near. I made the busiest window's cycle longer to protect against gridlock.\n- Within each window I split the green in proportion to each approach's flow ratio.\n\n| window | cycle | total green | N | E | S | W |\n|---|---|---|---|---|---|---|\n| 8:30 | 72 s | 56 s | 11 | 17 | 17 | 11 |\n| 8:45 | 80 s | 64 s | 12 | 20 | 20 | 12 |\n| 9:00 | 90 s | 74 s | 14 | 23 | 23 | 14 |\n| 9:15 | 80 s | 64 s | 12 | 20 | 20 | 12 |\n\n```json\n{\n  \"plan\": [\n    { \"N\": 11, \"E\": 17, \"S\": 17, \"W\": 11 },\n    { \"N\": 12, \"E\": 20, \"S\": 20, \"W\": 12 },\n    { \"N\": 14, \"E\": 23, \"S\": 23, \"W\": 14 },\n    { \"N\": 12, \"E\": 20, \"S\": 20, \"W\": 12 }\n  ],\n  \"notes\": \"Greens are split in proportion to per-lane flow ratio (W has only 2 lanes, so it gets more green per vehicle). Cycles run 72/80/90/80 s, which gives about 25-30% spare capacity in each window, enough to clear the queue without long cycles that add delay.\"\n}\n```"
+  },
+  {
+    "task_id": "02-evening-rush",
+    "holdout": false,
+    "reference_delay": 58.742,
+    "score": 0.2598,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 226.07,
+    "blocked": 106,
+    "plan": [
+      {
+        "N": 15,
+        "E": 12,
+        "S": 9,
+        "W": 12
+      },
+      {
+        "N": 17,
+        "E": 14,
+        "S": 10,
+        "W": 15
+      },
+      {
+        "N": 20,
+        "E": 16,
+        "S": 12,
+        "W": 16
+      },
+      {
+        "N": 16,
+        "E": 13,
+        "S": 10,
+        "W": 13
+      }
+    ],
+    "turn_id": "01m6n36ajhsmqpq0a6tj7paqk5",
+    "status": "done",
+    "reply": "I sized each approach from its flow ratio, which is the arrival rate divided by what its lanes can discharge. At 1800 vehicles per hour per lane, N, E and S discharge 1.5 vehicles per second each, and W discharges 1.0.\n\n| Window | Flow ratios (N / E / S / W) | Total flow ratio |\n|---|---|---|\n| 6:15 | 0.167 / 0.133 / 0.100 / 0.139 | 0.54 |\n| 6:30 | 0.194 / 0.156 / 0.117 / 0.161 | 0.63 |\n| 6:45 | 0.204 / 0.163 / 0.122 / 0.167 | 0.66 |\n| 7:00 | 0.176 / 0.141 / 0.106 / 0.144 | 0.57 |\n\nEach cycle loses 16 s to the four 4 s all-red gaps. The Webster formula for the lowest-delay cycle gives very short cycles of about 35 to 50 s. I added slack on purpose, because the 1800 figure is the ideal case and real discharge is usually lower. A short cycle with no spare capacity would risk a queue building past the 40-per-lane limit, and gridlock is the costliest outcome. The cycles are 64, 72, 80 and 68 s. Their green share is about 12 to 18% above what the arrivals need. The extra capacity keeps queues short without adding much waiting.\n\nWithin each cycle I split the green in proportion to flow ratio, then rounded to whole seconds. Every green is within the 7–150 s limit.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 15, \"E\": 12, \"S\": 9, \"W\": 12 },\n    { \"N\": 17, \"E\": 14, \"S\": 10, \"W\": 15 },\n    { \"N\": 20, \"E\": 16, \"S\": 12, \"W\": 16 },\n    { \"N\": 16, \"E\": 13, \"S\": 10, \"W\": 13 }\n  ],\n  \"notes\": \"Greens are split by each approach's arrivals divided by its lane capacity (W has only 2 lanes, so it gets more green per vehicle). Cycles of 64, 72, 80 and 68 s follow the demand peak at 6:45. Each cycle keeps about 15% spare capacity over the arrivals so queues stay well below the 40-per-lane gridlock limit.\"\n}\n```"
+  },
+  {
+    "task_id": "03-monsoon-rain",
+    "holdout": false,
+    "reference_delay": 88.807,
+    "score": 0.4564,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 194.58,
+    "blocked": 132,
+    "plan": [
+      {
+        "N": 15,
+        "E": 23,
+        "S": 23,
+        "W": 14
+      },
+      {
+        "N": 17,
+        "E": 26,
+        "S": 26,
+        "W": 15
+      },
+      {
+        "N": 18,
+        "E": 27,
+        "S": 27,
+        "W": 17
+      },
+      {
+        "N": 16,
+        "E": 24,
+        "S": 24,
+        "W": 15
+      }
+    ],
+    "turn_id": "01m6n36s2y5hyemntm9mj36vx5",
+    "status": "done",
+    "reply": "This plan sizes each approach's green from its share of the window's demand, with spare capacity in case the rain cuts discharge more than I assumed.\n\n**Assumptions:** The rain slows discharge to about 0.8 of ideal. That gives about 1440 vehicles per hour of green per lane, so N, E and S can each discharge about 4320 veh/h and W about 2880 veh/h.\n\n**Method:**\n1. For each approach I took its flow ratio, which is arrivals divided by capacity.\n2. I summed the four ratios. This is the share of each cycle that must be green.\n3. Each cycle loses 16 s to all-red (4 s × 4).\n4. I picked a cycle length that leaves the greens about 15–25% above the minimum needed. This keeps queues well under the gridlock limit of 40 vehicles per lane, and the cycle stays short to keep waits low.\n5. I split the green time in proportion to the flow ratios.\n\n| Window | Flow-ratio sum | Cycle | Green available | Greens N / E / S / W |\n|---|---|---|---|---|\n| 8:45 | 0.58 | 90 s | 74 s | 15 / 23 / 23 / 14 |\n| 9:00 | 0.64 | 100 s | 84 s | 17 / 26 / 26 / 15 |\n| 9:15 | 0.67 | 105 s | 89 s | 18 / 27 / 27 / 17 |\n| 9:30 | 0.61 | 95 s | 79 s | 16 / 24 / 24 / 15 |\n\nThe 8:45 greens sum to 75 s, so that cycle runs 91 s rather than 90 s.\n\nEven if discharge were as low as 0.7 of ideal, the busiest window needs a flow-ratio sum of about 0.77. The 105 s cycle gives about 0.85, so it would still clear the queue.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 15, \"E\": 23, \"S\": 23, \"W\": 14 },\n    { \"N\": 17, \"E\": 26, \"S\": 26, \"W\": 15 },\n    { \"N\": 18, \"E\": 27, \"S\": 27, \"W\": 17 },\n    { \"N\": 16, \"E\": 24, \"S\": 24, \"W\": 15 }\n  ],\n  \"notes\": \"Assumed rain cuts discharge to ~0.8 of ideal (~1440 veh/h/lane), split green in proportion to arrivals/capacity (so 2-lane W gets more green per vehicle), and chose moderate 90-105 s cycles giving ~15-25% spare capacity to avoid queue buildup while keeping waits low; busiest window 9:15 gets the longest cycle.\"\n}\n```"
+  },
+  {
+    "task_id": "04-midday-shift-change",
+    "holdout": false,
+    "reference_delay": 61.837,
+    "score": 0.4174,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 148.14,
+    "blocked": 83,
+    "plan": [
+      {
+        "N": 19,
+        "E": 14,
+        "S": 21,
+        "W": 16
+      },
+      {
+        "N": 24,
+        "E": 18,
+        "S": 27,
+        "W": 20
+      },
+      {
+        "N": 19,
+        "E": 14,
+        "S": 21,
+        "W": 16
+      },
+      {
+        "N": 17,
+        "E": 13,
+        "S": 19,
+        "W": 14
+      }
+    ],
+    "turn_id": "01m6n376z9jh26vakrv22g7gz8",
+    "status": "done",
+    "reply": "Window 1 needs a cycle of about 86 s, window 2 about 105 s, window 3 the same as window 1, and window 4 about 79 s. The greens below are sized from those cycles.\n\n**Discharge.** Discharge is about 0.5 vehicles per second per lane. That gives N, E and S 1.5 veh/s each, since each has 3 lanes. W has 2 lanes, so 1.0 veh/s.\n\n**Flow ratios.** Each ratio is arrivals per second divided by discharge per second.\n\n| Window | N | E | S | W | Sum |\n|---|---|---|---|---|---|\n| 1:30 | 0.148 | 0.111 | 0.167 | 0.125 | 0.551 |\n| 1:45 | 0.170 | 0.128 | 0.193 | 0.144 | 0.635 |\n| 2:00 | 0.148 | 0.111 | 0.167 | 0.125 | 0.551 |\n| 2:15 | 0.126 | 0.094 | 0.141 | 0.106 | 0.467 |\n\n**Cycle length.** Each cycle loses 16 s to all-red (4 × 4 s). Webster's formula gives a minimum of about 65 s for window 1 and about 79 s for window 2. I added margin because 1800 veh/h per lane is an ideal figure. I also gave the busy windows a longer cycle so there is spare green. That keeps utilisation at about 70–75% in the busy windows and about 60% in the last window.\n\n**Gridlock and end-of-hour queues.** Gridlock needs a queue over 120 vehicles on N, E or S, or over 80 on W. Every approach stays well under capacity, so queues should clear each cycle. That also avoids the 120 s penalty for vehicles left queued at the end of the hour.\n\n**Greens.** Each approach's green is roughly proportional to its flow ratio, with the margin added.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 19, \"E\": 14, \"S\": 21, \"W\": 16 },\n    { \"N\": 24, \"E\": 18, \"S\": 27, \"W\": 20 },\n    { \"N\": 19, \"E\": 14, \"S\": 21, \"W\": 16 },\n    { \"N\": 17, \"E\": 13, \"S\": 19, \"W\": 14 }\n  ],\n  \"notes\": \"Greens are proportional to each approach's arrivals divided by its lane capacity, so 2-lane W gets more green per vehicle. Cycles of about 75–105 s, longer in the 1:45 peak, keep utilisation around 60–75%. That avoids gridlock and leftover queues without wasting green or adding long red waits.\"\n}\n```"
+  },
+  {
+    "task_id": "05-holdout-ipl-night",
+    "holdout": true,
+    "reference_delay": 59.463,
+    "score": 0.3755,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 158.36,
+    "blocked": 65,
+    "plan": [
+      {
+        "N": 18,
+        "E": 8,
+        "S": 7,
+        "W": 15
+      },
+      {
+        "N": 31,
+        "E": 14,
+        "S": 13,
+        "W": 26
+      },
+      {
+        "N": 35,
+        "E": 16,
+        "S": 14,
+        "W": 29
+      },
+      {
+        "N": 23,
+        "E": 10,
+        "S": 9,
+        "W": 18
+      }
+    ],
+    "turn_id": "01m6n37q0qfspe6791c6966ssx",
+    "status": "done",
+    "reply": "This plan comes from my own calculation, because the playbook only says to split green in proportion to arrivals. I haven't run it through a simulator, so the numbers are untested.\n\n**Method**\n- Each lane discharges at most 0.5 vehicles per second (1,800 per hour). I assumed about 80% of that in practice (about 1,440 per hour per lane) to allow for start-up loss. That gives N, E and S about 4,320 per hour each and W about 2,880 per hour.\n- Each approach's flow ratio is its arrivals divided by that discharge rate. The cycle must satisfy: cycle length = 16 s of all-red (4 × 4 s) + total green. Total green must be at least (sum of flow ratios) × cycle length.\n- I picked a cycle with some slack beyond that minimum, and split the green in proportion to each approach's flow ratio. Because W has only 2 lanes, it gets a larger share than its arrivals alone would suggest.\n- The busy windows get longer cycles so the queues clear. Even so, the longest queues, on N in the 11:00 window, should stay under the 40-vehicles-per-lane gridlock limit. Each cycle brings about 42 vehicles to N, and 35 s of green clears up to about 52 at the ideal rate.\n- Leaving little queue behind at 11:30 matters because each leftover vehicle costs 120 s of delay.\n\n| Window | Cycle | N | E | S | W | Total green |\n|---|---|---|---|---|---|---|\n| 10:30 | ~64 s | 18 | 8 | 7 | 15 | 48 s |\n| 10:45 | ~100 s | 31 | 14 | 13 | 26 | 84 s |\n| 11:00 | ~110 s | 35 | 16 | 14 | 29 | 94 s |\n| 11:15 | ~76 s | 23 | 10 | 9 | 18 | 60 s |\n\n```json\n{\n  \"plan\": [\n    { \"N\": 18, \"E\": 8, \"S\": 7, \"W\": 15 },\n    { \"N\": 31, \"E\": 14, \"S\": 13, \"W\": 26 },\n    { \"N\": 35, \"E\": 16, \"S\": 14, \"W\": 29 },\n    { \"N\": 23, \"E\": 10, \"S\": 9, \"W\": 18 }\n  ],\n  \"notes\": \"Greens are split by each approach's flow ratio (arrivals divided by lane-count × ~1440 veh/h effective discharge), so W's 2 lanes get extra share. Cycle length grows in the peak windows (10:45–11:15) to stay clear of gridlock and clear queues, then shortens in the last window.\"\n}\n```"
+  },
+  {
+    "task_id": "06-holdout-metro-works",
+    "holdout": true,
+    "reference_delay": 61.749,
+    "score": 0.4055,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 152.27,
+    "blocked": 75,
+    "plan": [
+      {
+        "N": 14,
+        "E": 27,
+        "S": 19,
+        "W": 14
+      },
+      {
+        "N": 15,
+        "E": 31,
+        "S": 22,
+        "W": 16
+      },
+      {
+        "N": 17,
+        "E": 33,
+        "S": 23,
+        "W": 16
+      },
+      {
+        "N": 15,
+        "E": 29,
+        "S": 20,
+        "W": 15
+      }
+    ],
+    "turn_id": "01m6n387y1377x0qa94g3qe0kt",
+    "status": "done",
+    "reply": "Each window's greens are sized from how much each approach can discharge, not from raw arrival counts.\n\n**Method**\n- Each lane discharges about 1800 veh/h of green. That gives N and S 5400 veh/h each, and E and W 3600 veh/h each.\n- An approach's flow ratio is its arrivals divided by its capacity. The four ratios sum to 0.51, 0.60, 0.65 and 0.54 across the four windows.\n- I split the green time in proportion to those flow ratios. The metro lane closure is already reflected in E having 2 lanes.\n- Lost time is 16 s per cycle (4 s all-red × 4 greens). I set the cycle so total green is about 1.3–1.5 times the minimum needed.\n- That margin covers real discharge being below the ideal 1800 veh/h. It stays short enough to keep waits low.\n- Queues stay well under the 40-per-lane gridlock limit. The worst case is E in the 9:00 window, which gets about 24 vehicles per cycle against 80 of storage.\n\n| Window | Cycle | N | E | S | W |\n|---|---|---|---|---|---|\n| 8:30 | 90 s | 14 | 27 | 19 | 14 |\n| 8:45 | 100 s | 15 | 31 | 22 | 16 |\n| 9:00 | 105 s | 17 | 33 | 23 | 16 |\n| 9:15 | 95 s | 15 | 29 | 20 | 15 |\n\n```json\n{\n  \"plan\": [\n    { \"N\": 14, \"E\": 27, \"S\": 19, \"W\": 14 },\n    { \"N\": 15, \"E\": 31, \"S\": 22, \"W\": 16 },\n    { \"N\": 17, \"E\": 33, \"S\": 23, \"W\": 16 },\n    { \"N\": 15, \"E\": 29, \"S\": 20, \"W\": 15 }\n  ],\n  \"notes\": \"Greens are split in proportion to arrivals divided by lane capacity (lanes × 1800 veh/h), so the 2-lane E gets the most green. Cycles run 90–105 s, giving about 1.3–1.5× the minimum green needed: this absorbs the 9:00 peak and keeps queues far below the 40-per-lane gridlock limit.\"\n}\n```"
+  }
+]
