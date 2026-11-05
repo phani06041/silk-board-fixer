@@ -12,13 +12,21 @@ run-evals ──► simulator report per window & approach ──► improve (ag
 
 ## Run 1 vs run N
 
-> Fill this in at the end. Five lines max. Keep the heading: the challenge checks for it.
+- **Task and score:** plan the signal greens for 6 one-hour scenarios at Silk Board (2 are holdout: an IPL night and a metro-works lane closure). Score per scenario = best known average wait ÷ the plan's average wait (1 = as good as the optimiser). Run score = 100 × mean. Model: Claude Sonnet 5.5 via the TrueFoundry AI Gateway.
+- **Run 1 → run N:** **38.3 → 96.1** at run 4, 93.8 at run 5 (`runs/summary.csv`). Average wait **172 s → 67 s** per vehicle. Holdout scenarios **39 → 94**, though they never appear in the agent's feedback.
+- **The change that did it:** [`5c0e548` agent: learn from run 01](../../commit/5c0e548) (`Agent-Session: 01m6n3ah6s8pv79a6jnhvswped`) took it from 38 to 91. [`136d5ca`](../../commit/136d5ca) undid its own bad rule after a dip and reached 96.
+- **What the agent learned:** from the simulator's reports alone, it worked out that Hosur Road from Electronic City discharges only ~1,060 vehicles per lane per hour (truth: 1,080), that rain cuts flow to 0.80 (truth: 0.80), and that every green loses ~2–3 s at the start (truth: 2 s). It then wrote itself a Webster-style method around those numbers.
+- **What still fails:** the evening rush and the IPL night stay near 0.88–0.90. Both have a heavy flow from the city side that the agent under-serves in the last window. Round 5 tried to fix it and moved scores by ±2 points: the curve has levelled off.
 
-- **Task and score:** _plan the signal greens for 6 one-hour scenarios at Silk Board (2 are holdout: an IPL night and a metro-works lane closure). Score per scenario = best known average wait ÷ the plan's average wait (1 = as good as the optimiser). Run score = 100 × mean._
-- **Run 1 → run N:** _e.g. 40 → 92 (`runs/summary.csv`); average wait 150 s → 64 s; holdout 40 → 90._
-- **The change that did it:** _link to the commit with `Agent-Session:`._
-- **What the agent learned:** _one sentence from the commit._
-- **What still fails:** _…_
+**Demo:** a 3D replay of Silk Board where run 1 jams and the learned run flows, same traffic second by second: [`docs/index.html`](docs/index.html) (GitHub Pages: https://phani06041.github.io/silk-board-fixer/).
+
+| Run | Score | Holdout | Avg wait | What the agent changed before this run |
+|---|---|---|---|---|
+| 1 | 38.3 | 39.1 | 172 s | starting playbook (textbook) |
+| 2 | 91.4 | 86.2 | 71 s | measured each approach's real flow; longer cycles |
+| 3 | 87.6 | 86.0 | 75 s | padded Electronic City extra: backfired |
+| 4 | **96.1** | **94.3** | **67 s** | saw the dip in its score history, removed the padding, added a capacity check |
+| 5 | 93.8 | 91.0 | 69 s | kept the last window's cycle longer (no real gain) |
 
 ## Why the improvement is real
 

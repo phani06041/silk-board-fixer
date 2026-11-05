@@ -1,0 +1,686 @@
+<title>Silk Board Fixer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* Layout: the 3D junction is the page. A full-bleed scene with a control-room HUD over it,
+   then the evidence below (curve, rediscovered quirks, the agent's own notes). Single dark world on purpose. */
+:root {
+  --night: #12151a;
+  --panel: rgba(18, 21, 26, .78);
+  --panel-solid: #1b2027;
+  --line: #2f3742;
+  --paint: #eeebe2;
+  --muted: #9aa4b0;
+  --amber: #f4b73a;
+  --go: #39d07c;
+  --stop: #f05a4a;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--night); color: var(--paint); font: 16px/1.55 var(--body); }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2 { font-family: var(--display); text-transform: uppercase; line-height: .92; margin: 0; text-wrap: balance; }
+h2 { font-size: clamp(30px, 4.6vw, 46px); font-weight: 800; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font: 600 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+button, select { font-family: var(--body); }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+/* ---------- Stage ---------- */
+.stage { position: relative; height: min(86vh, 820px); min-height: 560px; overflow: hidden; background: #0d1014; }
+#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.lbl { position: absolute; transform: translate(-50%, -50%); font: 700 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--paint); background: rgba(13,16,20,.7); padding: 4px 7px; border-radius: 4px; white-space: nowrap; }
+.lbl .q { color: var(--amber); }
+.hud { position: absolute; inset: 0; pointer-events: none; display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); padding-block: 16px; }
+.hud > * { min-width: 0; }
+.hud > * { pointer-events: auto; }
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.brand { flex: 1 1 auto; min-width: 0; }
+.clockbox { flex: none; }
+.brand { background: var(--panel); backdrop-filter: blur(6px); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 6px; max-width: 420px; }
+.brand h1 { font-size: clamp(34px, 5vw, 54px); font-weight: 900; }
+.brand h1 span { color: var(--amber); }
+.brand p { font-size: 14px; color: var(--muted); }
+.clockbox { background: var(--panel); backdrop-filter: blur(6px); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; text-align: right; display: grid; gap: 2px; }
+.clock { font: 900 46px/1 var(--display); color: var(--amber); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.scen-name { font: 700 13px/1.2 var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+.weather { font-size: 12px; color: var(--muted); }
+.bottom { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+.runs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.run { min-width: 0; text-align: left; cursor: pointer; background: var(--panel); backdrop-filter: blur(6px); border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; color: var(--paint); display: grid; gap: 8px; }
+.run[aria-pressed="true"].before { border-color: var(--stop); }
+.run[aria-pressed="true"].after { border-color: var(--go); }
+.run .rh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.run .rh b { font: 800 22px/1 var(--display); text-transform: uppercase; }
+.run .rh span { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.run .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.run .nums div { display: grid; gap: 1px; }
+.run .nums b { font: 700 22px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.run .nums small { font-size: 11px; color: var(--muted); line-height: 1.2; }
+.run.before .nums b.hot { color: var(--stop); }
+.run.after .nums b.cool { color: var(--go); }
+.run .viewing { font: 700 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--night); background: var(--paint); padding: 3px 6px; border-radius: 3px; visibility: hidden; }
+.run[aria-pressed="true"] .viewing { visibility: visible; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font-weight: 700; font-size: 14px; background: var(--paint); color: var(--night); border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+.btn.ghost { background: var(--panel); color: var(--paint); border: 1px solid var(--line); backdrop-filter: blur(6px); }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; flex: 1 1 100%; min-width: 0; }
+.chip { flex: none; font-weight: 700; font-size: 13px; color: var(--paint); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 9px 13px; cursor: pointer; backdrop-filter: blur(6px); }
+.chip[aria-pressed="true"] { background: var(--amber); color: var(--night); border-color: var(--amber); }
+.chip small { font: 700 9px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; margin-left: 5px; opacity: .7; }
+.hint { font-size: 12px; color: var(--muted); }
+.midrow { display: flex; justify-content: flex-end; align-items: center; pointer-events: none; padding-block: 10px; }
+.cam { pointer-events: auto; display: grid; gap: 6px; background: var(--panel); backdrop-filter: blur(6px); border: 1px solid var(--line); border-radius: 12px; padding: 10px; width: 170px; }
+.cam-h { font: 600 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.cam-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cbtn { font-weight: 700; font-size: 13px; text-align: left; color: var(--paint); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+.cbtn.icon { text-align: center; padding: 6px 0; font-size: 16px; }
+.cbtn[aria-pressed="true"] { background: var(--paint); color: var(--night); border-color: var(--paint); }
+@media (max-width: 700px) {
+  .stage { height: 92vh; min-height: 640px; }
+  .brand { padding: 8px 10px; }
+  .brand p, .brand .eyebrow { display: none; }
+  .brand h1 { font-size: 28px; }
+  .clockbox { padding: 8px 10px; }
+  .clock { font-size: 28px; }
+  .scen-name { font-size: 10px; } .weather { display: none; }
+  .runs { gap: 6px; }
+  .run { padding: 8px 9px; gap: 6px; }
+  .run .rh span:not(.viewing) { display: none; }
+  .run .nums { grid-template-columns: 1fr 1fr; }
+  .run .nums div:nth-child(3) { grid-column: 1 / -1; }
+  .run .nums b { font-size: 16px; }
+  .run .nums small { font-size: 10px; }
+  .run .rh b { font-size: 18px; }
+  .btn { padding: 9px 11px; font-size: 13px; }
+  .hint { display: none; }
+  .midrow { align-items: flex-start; }
+  .cam { width: 132px; padding: 7px; gap: 4px; }
+  .cbtn { font-size: 11px; padding: 6px 7px; }
+  .cbtn.icon { font-size: 14px; padding: 4px 0; }
+  .lbl { font-size: 9px; }
+}
+
+/* ---------- Evidence ---------- */
+.below { max-width: 1120px; margin: 0 auto; padding-block: 56px 64px; display: grid; gap: 56px; }
+section { display: grid; gap: 18px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.stat { padding: 18px 18px 18px 0; display: grid; gap: 4px; }
+.stat + .stat { border-left: 1px solid var(--line); padding-left: 18px; }
+.stat b { font: 800 46px/1 var(--display); }
+.stat .from { color: var(--stop); } .stat .to { color: var(--go); }
+.stat span { font-size: 14px; color: var(--muted); }
+@media (max-width: 640px) { .stat + .stat { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; } }
+.chart { background: var(--panel-solid); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; }
+.chart svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.chart text { font: 12px var(--mono); fill: var(--muted); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 12px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--panel-solid); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.ok { color: var(--go); font-weight: 700; }
+.notes { display: grid; border-left: 3px dashed var(--line); margin-left: 8px; }
+.note { position: relative; padding: 0 0 26px 26px; display: grid; gap: 6px; }
+.note::before { content: ""; position: absolute; left: -10px; top: 3px; width: 17px; height: 17px; border-radius: 50%; background: var(--night); border: 3px solid var(--go); }
+.note.dip::before { border-color: var(--stop); }
+.note .head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; }
+.note .head b { font: 800 20px/1 var(--display); text-transform: uppercase; }
+.note blockquote { margin: 0; padding: 12px 14px; background: var(--panel-solid); border-radius: 8px; font-size: 15px; max-width: 75ch; }
+.loop { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.loop div { border-top: 3px solid var(--amber); padding-top: 12px; display: grid; gap: 6px; }
+.loop b { font: 800 20px/1.1 var(--display); text-transform: uppercase; }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 18px; }
+.nogl { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
+</style>
+
+<div class="stage" id="stage">
+  <canvas id="scene" aria-label="3D view of Silk Board junction with live traffic"></canvas>
+  <div class="labels" id="labels" aria-hidden="true"></div>
+  <div class="hud gutter">
+    <div class="top">
+      <div class="brand">
+        <div class="eyebrow">Stranger Builds · TrueForge · Bengaluru</div>
+        <h1>Silk <span>Board</span> Fixer</h1>
+        <p>An AI agent times the signals at Bengaluru's worst junction and rewrites its own playbook after every run. Same hour, same traffic: watch it before and after it learned.</p>
+      </div>
+      <div class="clockbox">
+        <div class="clock" id="clock">8:30</div>
+        <div class="scen-name" id="scenName">Weekday morning rush</div>
+        <div class="weather" id="weather"></div>
+      </div>
+    </div>
+    <div class="midrow">
+      <div class="cam" role="group" aria-label="Camera">
+        <span class="cam-h">Camera</span>
+        <button class="cbtn" type="button" data-view="overview" aria-pressed="true">Overview</button>
+        <button class="cbtn" type="button" data-view="top" aria-pressed="false">Top-down</button>
+        <button class="cbtn" type="button" data-view="ec" aria-pressed="false">Electronic City queue</button>
+        <button class="cbtn" type="button" data-view="street" aria-pressed="false">Street level</button>
+        <div class="cam-row">
+          <button class="cbtn icon" type="button" data-rot="-1" aria-label="Rotate left">⟲</button>
+          <button class="cbtn icon" type="button" data-rot="1" aria-label="Rotate right">⟳</button>
+          <button class="cbtn icon" type="button" data-zoom="0.8" aria-label="Zoom in">+</button>
+          <button class="cbtn icon" type="button" data-zoom="1.25" aria-label="Zoom out">−</button>
+        </div>
+        <button class="cbtn" type="button" id="auto" aria-pressed="false">Auto-rotate: off</button>
+      </div>
+    </div>
+    <div class="bottom">
+      <div class="runs">
+        <button class="run before" id="runA" type="button" aria-pressed="false"></button>
+        <button class="run after" id="runB" type="button" aria-pressed="true"></button>
+      </div>
+      <div class="bar">
+        <button class="btn" id="play" type="button">Pause</button>
+        <button class="btn ghost" id="restart" type="button">Restart</button>
+        <button class="btn ghost" id="speed" type="button">Speed 1×</button>
+        <button class="btn ghost" id="peak" type="button">Jump to the peak</button>
+        <div class="chips" id="chips" role="group" aria-label="Scenario"></div>
+      </div>
+      <div class="hint">Drag to orbit · scroll or pinch to zoom · tap a run to switch the junction between them at the same moment</div>
+    </div>
+  </div>
+</div>
+
+<div class="below gutter">
+  <section aria-labelledby="curve-h">
+    <div class="stats" id="stats"></div>
+    <div class="eyebrow">The learning curve</div>
+    <h2 id="curve-h">Score after every run</h2>
+    <p class="muted">Score = the best known average wait divided by the plan's average wait, so 100 means as good as an optimiser that knows the junction's hidden numbers. The two holdout scenarios never appear in the agent's feedback.</p>
+    <div class="chart" id="chart"></div>
+  </section>
+
+  <section aria-labelledby="truth-h">
+    <div class="eyebrow">What it worked out</div>
+    <h2 id="truth-h">Hidden quirks, rediscovered</h2>
+    <p class="muted">The simulator has quirks the agent is never told. Its prompt only says a lane moves "about 1,800 vehicles per hour of green". The middle column is quoted from the playbook the agent wrote itself, from the simulator's reports.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Hidden in the simulator</th><th>The agent's playbook says</th><th>Truth</th></tr></thead>
+      <tbody>
+        <tr><td>Hosur Road from Electronic City is slow (BMTC buses, flyover merge)</td><td class="num">"S ~1060 per lane … the bottleneck"</td><td class="num">1080 per lane <span class="ok">✓</span></td></tr>
+        <tr><td>Rain slows every approach</td><td class="num">"about 0.80 of dry flow"</td><td class="num">× 0.80 <span class="ok">✓</span></td></tr>
+        <tr><td>Each green loses time while traffic gets moving</td><td class="num">"Each green loses ~2–3 s at the start"</td><td class="num">2 s <span class="ok">✓</span></td></tr>
+        <tr><td>Hosur Road from Madiwala</td><td class="num">"N ~1650 per lane"</td><td class="num">1710 per lane <span class="ok">✓</span></td></tr>
+        <tr><td>Outer Ring Road from HSR</td><td class="num">"E ~1565 per lane"</td><td class="num">1620 per lane <span class="ok">✓</span></td></tr>
+        <tr><td>Outer Ring Road from BTM (2 lanes)</td><td class="num">"W ~1500 per lane"</td><td class="num">1530 per lane <span class="ok">✓</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="notes-h">
+    <div class="eyebrow">In its own words</div>
+    <h2 id="notes-h">What it wrote after each run</h2>
+    <p class="muted">Each note is the summary from a commit the agent wrote itself, signed with its TrueForge session. The dip after run 2 is real: its own rule backfired, it saw the drop in its score history, and it removed the rule.</p>
+    <div class="notes" id="notes"></div>
+  </section>
+
+  <section aria-labelledby="loop-h">
+    <div class="eyebrow">How it works</div>
+    <h2 id="loop-h">The loop</h2>
+    <div class="loop">
+      <div><b>Plan</b><p class="muted">For each scenario the agent writes the green time for every approach in every 15-minute window. It runs on TrueForge, through the TrueFoundry AI Gateway.</p></div>
+      <div><b>Simulate</b><p class="muted">A deterministic simulator plays out the hour second by second: arrivals, discharge, queues, gridlock. The 3D view above runs that same simulator in your browser.</p></div>
+      <div><b>Read the report</b><p class="muted">Per window and approach: vehicles in and out, waits, longest queue and the measured flow per lane. No answers, only what happened.</p></div>
+      <div><b>Rewrite itself</b><p class="muted">The agent rewrites its playbook and commits it with its session ID. Scenarios and scorer stay frozen, so every run is measured the same way.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Built for Stranger Builds 2026 by Phanindra Maddipatla. Agent: Claude Sonnet 5.5 on TrueForge via the TrueFoundry AI Gateway.</span>
+    <span>Scenario demand figures are illustrative, not official traffic counts. The junction is a stylised model of Silk Board, not a survey.</span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// Same simulator as evals/sim.ts, stepped one second at a time for the replay.
+const DIRS = ["N", "E", "S", "W"];
+const R = { satPerLane: 1800, allRed: 4, storagePerLane: 40, blockedPenalty: 300, residualPenalty: 120, startupLost: 2 };
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function arrivalsFor(s) {
+  const T = s.windows.reduce((a, w) => a + w.minutes * 60, 0); const out = {};
+  DIRS.forEach((d, k) => { const r = rng(s.hidden.seed * 7 + k + 1); const arr = new Uint8Array(T); let t = 0;
+    for (const w of s.windows) { const p = w.demand[d] / 3600; for (let i = 0; i < w.minutes * 60; i++, t++) arr[t] = r() < p ? 1 : 0; } out[d] = arr; });
+  return out;
+}
+class Sim {
+  constructor(s, plan) {
+    this.s = s; this.plan = plan; this.arr = arrivalsFor(s);
+    this.lanes = Object.fromEntries(s.approaches.map((a) => [a.id, a.lanes]));
+    this.rate = Object.fromEntries(DIRS.map((d) => [d, (this.lanes[d] * R.satPerLane * s.hidden.sat_factor[d]) / 3600]));
+    this.storage = Object.fromEntries(DIRS.map((d) => [d, this.lanes[d] * R.storagePerLane]));
+    this.starts = []; let T = 0; for (const w of s.windows) { this.starts.push(T); T += w.minutes * 60; } this.T = T;
+    this.q = { N: 0, E: 0, S: 0, W: 0 }; this.credit = { N: 0, E: 0, S: 0, W: 0 };
+    this.phase = 0; this.inRed = false; this.left = plan[0][DIRS[0]]; this.ge = 0;
+    this.t = 0; this.delay = 0; this.veh = 0; this.blocked = 0; this.served = 0;
+  }
+  win(t) { let i = 0; while (i + 1 < this.starts.length && t >= this.starts[i + 1]) i++; return i; }
+  get green() { return this.inRed ? null : DIRS[this.phase]; }
+  step() {
+    if (this.t >= this.T) return false; const t = this.t; const ev = (this.ev = { arr: { N: 0, E: 0, S: 0, W: 0 }, blk: { N: 0, E: 0, S: 0, W: 0 }, srv: { N: 0, E: 0, S: 0, W: 0 } });
+    for (const d of DIRS) if (this.arr[d][t]) { this.veh++; if (this.q[d] >= this.storage[d]) { this.blocked++; ev.blk[d]++; } else { this.q[d]++; ev.arr[d]++; } }
+    const g = this.green;
+    if (g) { if (this.ge >= R.startupLost) { this.credit[g] += this.rate[g];
+        while (this.credit[g] >= 1 && this.q[g] > 0) { this.q[g]--; this.credit[g] -= 1; this.served++; ev.srv[g]++; }
+        if (this.q[g] === 0) this.credit[g] = Math.min(this.credit[g], 1); } this.ge++; }
+    for (const d of DIRS) this.delay += this.q[d];
+    if (--this.left <= 0) { if (this.inRed) { this.inRed = false; this.phase = (this.phase + 1) % 4;
+        this.left = this.plan[this.win(t + 1 < this.T ? t + 1 : t)][DIRS[this.phase]]; this.ge = 0; this.credit[DIRS[this.phase]] = 0; }
+      else { this.inRed = true; this.left = R.allRed; } }
+    this.t++; return true;
+  }
+  /** Average wait so far; at the end it includes the same penalties as the scorer. */
+  avg() { const res = this.t >= this.T ? DIRS.reduce((a, d) => a + this.q[d], 0) * R.residualPenalty : 0;
+    return this.veh ? (this.delay + res + this.blocked * R.blockedPenalty) / this.veh : 0; }
+}
+
+const DATA = {"scenarios": [{"id": "01-morning-rush", "title": "Weekday morning rush", "holdout": false, "description": "Tuesday, 8:30 to 9:30 AM. Office traffic from Electronic City and HSR heads towards the city and Koramangala.", "approaches": [{"id": "N", "name": "Hosur Road from Madiwala (city side)", "lanes": 3}, {"id": "E", "name": "Outer Ring Road from HSR Layout / Agara", "lanes": 3}, {"id": "S", "name": "Hosur Road from Bommanahalli / Electronic City", "lanes": 3}, {"id": "W", "name": "Outer Ring Road from BTM Layout", "lanes": 2}], "windows": [{"label": "8:30", "minutes": 15, "demand": {"N": 510, "E": 810, "S": 810, "W": 340}}, {"label": "8:45", "minutes": 15, "demand": {"N": 600, "E": 950, "S": 950, "W": 400}}, {"label": "9:00", "minutes": 15, "demand": {"N": 660, "E": 1040, "S": 1040, "W": 440}}, {"label": "9:15", "minutes": 15, "demand": {"N": 540, "E": 860, "S": 860, "W": 360}}], "hidden": {"seed": 11, "sat_factor": {"N": 0.95, "E": 0.9, "S": 0.6, "W": 0.85}}, "reference": {"avg_delay": 58.875, "plan": [{"N": 26, "E": 26, "S": 37, "W": 21}, {"N": 21, "E": 35, "S": 52, "W": 23}, {"N": 30, "E": 50, "S": 69, "W": 34}, {"N": 17, "E": 25, "S": 38, "W": 17}]}}, {"id": "02-evening-rush", "title": "Weekday evening rush", "holdout": false, "description": "Thursday, 6:15 to 7:15 PM. The reverse flow: offices empty out from the city and BTM towards Electronic City and HSR.", "approaches": [{"id": "N", "name": "Hosur Road from Madiwala (city side)", "lanes": 3}, {"id": "E", "name": "Outer Ring Road from HSR Layout / Agara", "lanes": 3}, {"id": "S", "name": "Hosur Road from Bommanahalli / Electronic City", "lanes": 3}, {"id": "W", "name": "Outer Ring Road from BTM Layout", "lanes": 2}], "windows": [{"label": "6:15", "minutes": 15, "demand": {"N": 900, "E": 720, "S": 540, "W": 500}}, {"label": "6:30", "minutes": 15, "demand": {"N": 1050, "E": 840, "S": 630, "W": 580}}, {"label": "6:45", "minutes": 15, "demand": {"N": 1100, "E": 880, "S": 660, "W": 600}}, {"label": "7:00", "minutes": 15, "demand": {"N": 950, "E": 760, "S": 570, "W": 520}}], "hidden": {"seed": 23, "sat_factor": {"N": 0.95, "E": 0.9, "S": 0.6, "W": 0.85}}, "reference": {"avg_delay": 58.742, "plan": [{"N": 25, "E": 21, "S": 24, "W": 30}, {"N": 41, "E": 31, "S": 36, "W": 40}, {"N": 45, "E": 40, "S": 45, "W": 39}, {"N": 29, "E": 24, "S": 27, "W": 24}]}}, {"id": "03-monsoon-rain", "title": "Monsoon downpour", "holdout": false, "description": "Monday, 8:45 to 9:45 AM, heavy rain. Fewer two-wheelers, water on the road, everyone drives slower.", "approaches": [{"id": "N", "name": "Hosur Road from Madiwala (city side)", "lanes": 3}, {"id": "E", "name": "Outer Ring Road from HSR Layout / Agara", "lanes": 3}, {"id": "S", "name": "Hosur Road from Bommanahalli / Electronic City", "lanes": 3}, {"id": "W", "name": "Outer Ring Road from BTM Layout", "lanes": 2}], "windows": [{"label": "8:45", "minutes": 15, "demand": {"N": 500, "E": 760, "S": 760, "W": 320}}, {"label": "9:00", "minutes": 15, "demand": {"N": 550, "E": 850, "S": 850, "W": 350}}, {"label": "9:15", "minutes": 15, "demand": {"N": 580, "E": 890, "S": 890, "W": 370}}, {"label": "9:30", "minutes": 15, "demand": {"N": 520, "E": 810, "S": 810, "W": 330}}], "hidden": {"seed": 37, "sat_factor": {"N": 0.76, "E": 0.72, "S": 0.48, "W": 0.68}}, "reference": {"avg_delay": 88.807, "plan": [{"N": 34, "E": 35, "S": 53, "W": 24}, {"N": 34, "E": 55, "S": 76, "W": 36}, {"N": 46, "E": 75, "S": 112, "W": 49}, {"N": 33, "E": 44, "S": 57, "W": 30}]}}, {"id": "04-midday-shift-change", "title": "Midday shift change", "holdout": false, "description": "Wednesday, 1:30 to 2:30 PM. IT campuses in Electronic City change shifts, and city traffic is steady.", "approaches": [{"id": "N", "name": "Hosur Road from Madiwala (city side)", "lanes": 3}, {"id": "E", "name": "Outer Ring Road from HSR Layout / Agara", "lanes": 3}, {"id": "S", "name": "Hosur Road from Bommanahalli / Electronic City", "lanes": 3}, {"id": "W", "name": "Outer Ring Road from BTM Layout", "lanes": 2}], "windows": [{"label": "1:30", "minutes": 15, "demand": {"N": 800, "E": 600, "S": 900, "W": 450}}, {"label": "1:45", "minutes": 15, "demand": {"N": 920, "E": 690, "S": 1040, "W": 520}}, {"label": "2:00", "minutes": 15, "demand": {"N": 800, "E": 600, "S": 900, "W": 450}}, {"label": "2:15", "minutes": 15, "demand": {"N": 680, "E": 510, "S": 760, "W": 380}}], "hidden": {"seed": 41, "sat_factor": {"N": 0.95, "E": 0.9, "S": 0.6, "W": 0.85}}, "reference": {"avg_delay": 61.837, "plan": [{"N": 25, "E": 20, "S": 39, "W": 24}, {"N": 48, "E": 34, "S": 77, "W": 42}, {"N": 27, "E": 20, "S": 45, "W": 24}, {"N": 14, "E": 14, "S": 28, "W": 16}]}}, {"id": "05-holdout-ipl-night", "title": "IPL match night (holdout)", "holdout": true, "description": "Saturday, 10:30 to 11:30 PM. An IPL match at Chinnaswamy has just ended; fans head home to the south and east of the city.", "approaches": [{"id": "N", "name": "Hosur Road from Madiwala (city side)", "lanes": 3}, {"id": "E", "name": "Outer Ring Road from HSR Layout / Agara", "lanes": 3}, {"id": "S", "name": "Hosur Road from Bommanahalli / Electronic City", "lanes": 3}, {"id": "W", "name": "Outer Ring Road from BTM Layout", "lanes": 2}], "windows": [{"label": "10:30", "minutes": 15, "demand": {"N": 770, "E": 350, "S": 320, "W": 420}}, {"label": "10:45", "minutes": 15, "demand": {"N": 1320, "E": 600, "S": 540, "W": 720}}, {"label": "11:00", "minutes": 15, "demand": {"N": 1380, "E": 620, "S": 560, "W": 750}}, {"label": "11:15", "minutes": 15, "demand": {"N": 880, "E": 400, "S": 360, "W": 480}}], "hidden": {"seed": 53, "sat_factor": {"N": 0.95, "E": 0.9, "S": 0.6, "W": 0.85}}, "reference": {"avg_delay": 59.463, "plan": [{"N": 17, "E": 8, "S": 11, "W": 15}, {"N": 54, "E": 26, "S": 38, "W": 47}, {"N": 64, "E": 32, "S": 48, "W": 65}, {"N": 24, "E": 11, "S": 17, "W": 22}]}}, {"id": "06-holdout-metro-works", "title": "Metro works lane closure (holdout)", "holdout": true, "description": "Friday, 8:30 to 9:30 AM. Pink Line metro works have closed one lane of the Outer Ring Road approach from HSR.", "approaches": [{"id": "N", "name": "Hosur Road from Madiwala (city side)", "lanes": 3}, {"id": "E", "name": "Outer Ring Road from HSR Layout / Agara", "lanes": 2}, {"id": "S", "name": "Hosur Road from Bommanahalli / Electronic City", "lanes": 3}, {"id": "W", "name": "Outer Ring Road from BTM Layout", "lanes": 2}], "windows": [{"label": "8:30", "minutes": 15, "demand": {"N": 510, "E": 680, "S": 720, "W": 340}}, {"label": "8:45", "minutes": 15, "demand": {"N": 600, "E": 800, "S": 850, "W": 400}}, {"label": "9:00", "minutes": 15, "demand": {"N": 650, "E": 860, "S": 920, "W": 430}}, {"label": "9:15", "minutes": 15, "demand": {"N": 540, "E": 720, "S": 760, "W": 360}}], "hidden": {"seed": 67, "sat_factor": {"N": 0.95, "E": 0.9, "S": 0.6, "W": 0.85}}, "reference": {"avg_delay": 61.749, "plan": [{"N": 14, "E": 30, "S": 31, "W": 16}, {"N": 23, "E": 47, "S": 49, "W": 26}, {"N": 36, "E": 65, "S": 69, "W": 34}, {"N": 15, "E": 34, "S": 36, "W": 18}]}}], "runs": [{"01-morning-rush": {"plan": [{"N": 11, "E": 17, "S": 17, "W": 11}, {"N": 12, "E": 20, "S": 20, "W": 12}, {"N": 14, "E": 23, "S": 23, "W": 14}, {"N": 12, "E": 20, "S": 20, "W": 12}], "score": 0.3832, "delay": 153.66}, "02-evening-rush": {"plan": [{"N": 15, "E": 12, "S": 9, "W": 12}, {"N": 17, "E": 14, "S": 10, "W": 15}, {"N": 20, "E": 16, "S": 12, "W": 16}, {"N": 16, "E": 13, "S": 10, "W": 13}], "score": 0.2598, "delay": 226.07}, "03-monsoon-rain": {"plan": [{"N": 15, "E": 23, "S": 23, "W": 14}, {"N": 17, "E": 26, "S": 26, "W": 15}, {"N": 18, "E": 27, "S": 27, "W": 17}, {"N": 16, "E": 24, "S": 24, "W": 15}], "score": 0.4564, "delay": 194.58}, "04-midday-shift-change": {"plan": [{"N": 19, "E": 14, "S": 21, "W": 16}, {"N": 24, "E": 18, "S": 27, "W": 20}, {"N": 19, "E": 14, "S": 21, "W": 16}, {"N": 17, "E": 13, "S": 19, "W": 14}], "score": 0.4174, "delay": 148.14}, "05-holdout-ipl-night": {"plan": [{"N": 18, "E": 8, "S": 7, "W": 15}, {"N": 31, "E": 14, "S": 13, "W": 26}, {"N": 35, "E": 16, "S": 14, "W": 29}, {"N": 23, "E": 10, "S": 9, "W": 18}], "score": 0.3755, "delay": 158.36}, "06-holdout-metro-works": {"plan": [{"N": 14, "E": 27, "S": 19, "W": 14}, {"N": 15, "E": 31, "S": 22, "W": 16}, {"N": 17, "E": 33, "S": 23, "W": 16}, {"N": 15, "E": 29, "S": 20, "W": 15}], "score": 0.4055, "delay": 152.27}}, {"01-morning-rush": {"plan": [{"N": 12, "E": 20, "S": 30, "W": 12}, {"N": 18, "E": 31, "S": 49, "W": 21}, {"N": 26, "E": 44, "S": 65, "W": 29}, {"N": 14, "E": 25, "S": 39, "W": 16}], "score": 0.9677, "delay": 60.84}, "02-evening-rush": {"plan": [{"N": 21, "E": 18, "S": 24, "W": 21}, {"N": 35, "E": 30, "S": 36, "W": 33}, {"N": 40, "E": 34, "S": 42, "W": 38}, {"N": 25, "E": 21, "S": 26, "W": 22}], "score": 0.9101, "delay": 64.54}, "03-monsoon-rain": {"plan": [{"N": 18, "E": 29, "S": 48, "W": 19}, {"N": 35, "E": 56, "S": 86, "W": 37}, {"N": 43, "E": 69, "S": 106, "W": 46}, {"N": 31, "E": 50, "S": 80, "W": 33}], "score": 0.9006, "delay": 98.61}, "04-midday-shift-change": {"plan": [{"N": 21, "E": 16, "S": 38, "W": 19}, {"N": 38, "E": 30, "S": 70, "W": 36}, {"N": 23, "E": 19, "S": 40, "W": 22}, {"N": 16, "E": 13, "S": 30, "W": 15}], "score": 0.9839, "delay": 62.85}, "05-holdout-ipl-night": {"plan": [{"N": 20, "E": 10, "S": 16, "W": 18}, {"N": 48, "E": 22, "S": 31, "W": 43}, {"N": 60, "E": 29, "S": 39, "W": 56}, {"N": 28, "E": 13, "S": 18, "W": 25}], "score": 0.906, "delay": 65.64}, "06-holdout-metro-works": {"plan": [{"N": 13, "E": 28, "S": 30, "W": 13}, {"N": 18, "E": 41, "S": 44, "W": 21}, {"N": 25, "E": 53, "S": 57, "W": 29}, {"N": 13, "E": 31, "S": 34, "W": 16}], "score": 0.8179, "delay": 75.5}}, {"01-morning-rush": {"plan": [{"N": 12, "E": 21, "S": 33, "W": 13}, {"N": 16, "E": 29, "S": 48, "W": 18}, {"N": 26, "E": 44, "S": 65, "W": 29}, {"N": 13, "E": 22, "S": 35, "W": 14}], "score": 0.8932, "delay": 65.92}, "02-evening-rush": {"plan": [{"N": 22, "E": 19, "S": 22, "W": 21}, {"N": 31, "E": 26, "S": 31, "W": 28}, {"N": 40, "E": 34, "S": 39, "W": 36}, {"N": 24, "E": 20, "S": 23, "W": 23}], "score": 0.9383, "delay": 62.61}, "03-monsoon-rain": {"plan": [{"N": 19, "E": 30, "S": 46, "W": 20}, {"N": 26, "E": 43, "S": 67, "W": 28}, {"N": 34, "E": 55, "S": 90, "W": 35}, {"N": 22, "E": 37, "S": 60, "W": 25}], "score": 0.8007, "delay": 110.91}, "04-midday-shift-change": {"plan": [{"N": 23, "E": 18, "S": 41, "W": 22}, {"N": 34, "E": 27, "S": 62, "W": 31}, {"N": 21, "E": 16, "S": 36, "W": 19}, {"N": 15, "E": 12, "S": 28, "W": 14}], "score": 0.9008, "delay": 68.65}, "05-holdout-ipl-night": {"plan": [{"N": 24, "E": 12, "S": 17, "W": 21}, {"N": 42, "E": 21, "S": 28, "W": 39}, {"N": 52, "E": 25, "S": 35, "W": 48}, {"N": 23, "E": 11, "S": 16, "W": 19}], "score": 0.8972, "delay": 66.28}, "06-holdout-metro-works": {"plan": [{"N": 11, "E": 26, "S": 30, "W": 12}, {"N": 18, "E": 41, "S": 44, "W": 21}, {"N": 28, "E": 60, "S": 66, "W": 30}, {"N": 13, "E": 28, "S": 30, "W": 13}], "score": 0.8234, "delay": 74.99}}, {"01-morning-rush": {"plan": [{"N": 13, "E": 20, "S": 28, "W": 14}, {"N": 20, "E": 31, "S": 45, "W": 22}, {"N": 29, "E": 47, "S": 67, "W": 32}, {"N": 16, "E": 25, "S": 36, "W": 17}], "score": 0.992, "delay": 59.35}, "02-evening-rush": {"plan": [{"N": 23, "E": 19, "S": 21, "W": 21}, {"N": 36, "E": 31, "S": 34, "W": 33}, {"N": 47, "E": 40, "S": 44, "W": 43}, {"N": 28, "E": 24, "S": 26, "W": 26}], "score": 0.8947, "delay": 65.65}, "03-monsoon-rain": {"plan": [{"N": 20, "E": 31, "S": 44, "W": 22}, {"N": 32, "E": 49, "S": 70, "W": 33}, {"N": 40, "E": 62, "S": 89, "W": 43}, {"N": 30, "E": 46, "S": 67, "W": 31}], "score": 0.9971, "delay": 89.07}, "04-midday-shift-change": {"plan": [{"N": 25, "E": 22, "S": 43, "W": 24}, {"N": 42, "E": 34, "S": 74, "W": 39}, {"N": 27, "E": 22, "S": 47, "W": 25}, {"N": 19, "E": 15, "S": 29, "W": 17}], "score": 0.9941, "delay": 62.2}, "05-holdout-ipl-night": {"plan": [{"N": 16, "E": 12, "S": 12, "W": 15}, {"N": 52, "E": 27, "S": 34, "W": 47}, {"N": 60, "E": 30, "S": 39, "W": 55}, {"N": 22, "E": 12, "S": 15, "W": 19}], "score": 0.8855, "delay": 67.15}, "06-holdout-metro-works": {"plan": [{"N": 14, "E": 27, "S": 28, "W": 15}, {"N": 20, "E": 40, "S": 42, "W": 22}, {"N": 29, "E": 59, "S": 61, "W": 30}, {"N": 16, "E": 30, "S": 31, "W": 17}], "score": 1, "delay": 60.24}}, {"01-morning-rush": {"plan": [{"N": 12, "E": 19, "S": 26, "W": 13}, {"N": 19, "E": 31, "S": 44, "W": 20}, {"N": 28, "E": 47, "S": 69, "W": 30}, {"N": 22, "E": 36, "S": 52, "W": 24}], "score": 1, "delay": 57.99}, "02-evening-rush": {"plan": [{"N": 22, "E": 20, "S": 21, "W": 21}, {"N": 36, "E": 31, "S": 34, "W": 33}, {"N": 46, "E": 39, "S": 43, "W": 41}, {"N": 37, "E": 32, "S": 35, "W": 35}], "score": 0.8832, "delay": 66.51}, "03-monsoon-rain": {"plan": [{"N": 18, "E": 28, "S": 41, "W": 19}, {"N": 26, "E": 43, "S": 64, "W": 28}, {"N": 37, "E": 59, "S": 89, "W": 39}, {"N": 37, "E": 60, "S": 88, "W": 39}], "score": 0.9214, "delay": 96.39}, "04-midday-shift-change": {"plan": [{"N": 21, "E": 17, "S": 37, "W": 19}, {"N": 36, "E": 28, "S": 62, "W": 32}, {"N": 27, "E": 22, "S": 48, "W": 25}, {"N": 21, "E": 17, "S": 37, "W": 19}], "score": 1, "delay": 57.48}, "05-holdout-ipl-night": {"plan": [{"N": 17, "E": 11, "S": 13, "W": 15}, {"N": 50, "E": 25, "S": 33, "W": 46}, {"N": 62, "E": 31, "S": 40, "W": 55}, {"N": 40, "E": 19, "S": 25, "W": 36}], "score": 0.8564, "delay": 69.43}, "06-holdout-metro-works": {"plan": [{"N": 13, "E": 24, "S": 25, "W": 14}, {"N": 21, "E": 42, "S": 43, "W": 23}, {"N": 29, "E": 57, "S": 60, "W": 31}, {"N": 23, "E": 46, "S": 48, "W": 25}], "score": 0.9641, "delay": 64.05}}], "learned": [["01", "Cycles were far too short, since lost time dominates a 45-65 s cycle, and S discharges only ~1040 per lane per hour (rain \u00d70.8), so greens must follow demand ratio (arrivals/lanes/flow) with Webster-style longer cycles."], ["02", "Listed arrival numbers are hourly rates (simulated window arrivals were about a quarter), so y needs no \u00d74. Measured flows are N ~1660, E ~1560, W ~1500 and S ~1065 per lane dry (about 0.8 of that in rain), and Webster cycles for the true Y worked. Small gains remain from avoiding early-window backlog and over-long rain cycles."], ["03", "Padding S from the low-y approaches starved N and W (waits 100-320 s, backlog) while S's spare green went unused, so greens should be pure y-proportional with a ~18-20 s floor, every approach must pass the capacity check (using green\u22123 s), and cycles should be Webster with no margin."], ["04", "Webster, y-proportional greens work (0.99-1.00 in three scenarios), and the weaker evening score came from cutting the last window's cycle too sharply, which left N with a backlog and 100 s waits, so the last window now keeps C at \u226575-80% of the peak C."]]};
+
+// ---------- numbers ----------
+const runScore = (n, f = () => true) => { const ss = DATA.scenarios.filter(f); return 100 * ss.reduce((a, s) => a + DATA.runs[n][s.id].score, 0) / ss.length; };
+const runDelay = (n) => DATA.scenarios.reduce((a, s) => a + DATA.runs[n][s.id].delay, 0) / DATA.scenarios.length;
+const BEST = [1, 2, 3, 4].reduce((b, n) => (runScore(n) > runScore(b) ? n : b), 1);
+
+document.getElementById("stats").innerHTML = [
+  [`<b><span class="from">${runScore(0).toFixed(0)}</span> → <span class="to">${runScore(BEST).toFixed(0)}</span></b>`, `Score, run 1 → run ${BEST + 1}`],
+  [`<b><span class="from">${runDelay(0).toFixed(0)} s</span> → <span class="to">${runDelay(BEST).toFixed(0)} s</span></b>`, "Average wait per vehicle"],
+  [`<b><span class="from">${runScore(0, (s) => s.holdout).toFixed(0)}</span> → <span class="to">${runScore(BEST, (s) => s.holdout).toFixed(0)}</span></b>`, "Holdout scenarios it never trained on"],
+  [`<b>${DATA.runs.length}</b>`, "Runs, each a TrueForge session"],
+].map(([b, s]) => `<div class="stat">${b}<span>${s}</span></div>`).join("");
+
+(function chart() {
+  const W = 760, H = 320, L = 52, Rr = 20, T = 24, B = 44, n = DATA.runs.length;
+  const X = (i) => L + (i * (W - L - Rr)) / (n - 1), Y = (v) => T + (1 - v / 100) * (H - T - B);
+  const all = DATA.runs.map((_, i) => runScore(i)), hold = DATA.runs.map((_, i) => runScore(i, (s) => s.holdout));
+  const line = (vals) => vals.map((v, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("");
+  const grid = [0, 25, 50, 75, 100].map((v) => `<line x1="${L}" x2="${W - Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L - 10}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`).join("");
+  const xs = DATA.runs.map((_, i) => `<text x="${X(i)}" y="${H - 18}" text-anchor="middle">run ${i + 1}</text>`).join("");
+  const dots = (vals, col, lab) => vals.map((v, i) => `<circle cx="${X(i)}" cy="${Y(v)}" r="${i === BEST ? 6 : 4}" fill="${col}"/>` + (lab ? `<text x="${X(i)}" y="${Y(v) - 12}" text-anchor="middle" style="fill:var(--paint);font-weight:600">${v.toFixed(1)}</text>` : "")).join("");
+  document.getElementById("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Score per run: ${all.map((v) => v.toFixed(1)).join(", ")}">
+    ${grid}${xs}<path d="${line(hold)}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 6"/>
+    <path d="${line(all)}" fill="none" stroke="var(--amber)" stroke-width="3"/>${dots(hold, "var(--muted)", false)}${dots(all, "var(--amber)", true)}
+    <g transform="translate(${L + 10},${T + 4})"><rect width="12" height="3" y="5" fill="var(--amber)"/><text x="18" y="11">all 6 scenarios</text><rect x="150" width="12" height="3" y="5" fill="var(--muted)"/><text x="168" y="11">2 holdout scenarios</text></g></svg>`;
+})();
+document.getElementById("notes").innerHTML = DATA.learned.map(([r, text], i) => {
+  const b = runScore(i), a = runScore(i + 1), dip = a < b;
+  return `<div class="note${dip ? " dip" : ""}"><div class="head"><b>After run ${+r}</b><span class="mono muted">next run: ${b.toFixed(1)} → ${a.toFixed(1)}${dip ? " (worse)" : ""}</span></div><blockquote>${text}</blockquote></div>`;
+}).join("");
+
+// ---------- 3D junction ----------
+(function junction() {
+  const stage = document.getElementById("stage"), canvas = document.getElementById("scene");
+  if (!window.THREE) { stage.insertAdjacentHTML("beforeend", '<div class="nogl">The 3D view needs WebGL and could not start in this browser.</div>'); return; }
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); } catch (e) { stage.insertAdjacentHTML("beforeend", '<div class="nogl">The 3D view needs WebGL and could not start in this browser.</div>'); return; }
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(34, 1, 0.5, 600);
+  camera.position.set(52, 42, -50);
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.target.set(-4, 0, 8); controls.enableDamping = true; controls.dampingFactor = 0.08;
+  controls.maxPolarAngle = 1.47; controls.minDistance = 6; controls.maxDistance = 220; controls.enablePan = false;
+  controls.autoRotate = false; controls.autoRotateSpeed = 0.5;
+  // Camera presets (x = east, z = south). Moves are eased over ~0.9 s.
+  const VIEWS = {
+    overview: { pos: [52, 42, -50], target: [-4, 0, 8], phone: { pos: [70, 78, -60], target: [-6, 0, 14] } },
+    top: { pos: [0, 120, 0.6], target: [0, 0, 0], phone: { pos: [0, 175, 0.8], target: [0, 0, 0] } },
+    ec: { pos: [26, 24, 70], target: [-3, 0, 26], phone: { pos: [34, 40, 92], target: [-3, 0, 28] } },
+    street: { pos: [-10, 2.6, 26], target: [-3.5, 1.4, 2], phone: { pos: [-10, 3, 30], target: [-3.5, 1.6, 2] } },
+  };
+  let tween = null;
+  function moveTo(pos, target) {
+    tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: new THREE.Vector3(...pos), t1: new THREE.Vector3(...target), k: 0 };
+  }
+  const isPhone = () => stage.clientWidth < 700;
+  const camBtns = stage.querySelectorAll(".cbtn[data-view]");
+  function setView(name, instant) {
+    const v = isPhone() ? VIEWS[name].phone : VIEWS[name];
+    camBtns.forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === name));
+    if (instant) { camera.position.set(...v.pos); controls.target.set(...v.target); tween = null; } else moveTo(v.pos, v.target);
+  }
+  const clearView = () => camBtns.forEach((b) => b.setAttribute("aria-pressed", "false"));
+  canvas.addEventListener("pointerdown", () => { tween = null; clearView(); });
+  canvas.addEventListener("wheel", clearView, { passive: true });
+  stage.querySelectorAll(".cbtn[data-view]").forEach((b) => b.addEventListener("click", () => setView(b.dataset.view)));
+  stage.querySelectorAll(".cbtn[data-rot]").forEach((b) => b.addEventListener("click", () => {
+    const off = camera.position.clone().sub(controls.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), (+b.dataset.rot * Math.PI) / 6);
+    moveTo(controls.target.clone().add(off).toArray(), controls.target.toArray()); clearView();
+  }));
+  stage.querySelectorAll(".cbtn[data-zoom]").forEach((b) => b.addEventListener("click", () => {
+    const off = camera.position.clone().sub(controls.target).multiplyScalar(+b.dataset.zoom);
+    const len = Math.min(controls.maxDistance, Math.max(controls.minDistance * 0.4, off.length())); off.setLength(len);
+    moveTo(controls.target.clone().add(off).toArray(), controls.target.toArray()); clearView();
+  }));
+  const autoBtn = document.getElementById("auto");
+  autoBtn.addEventListener("click", () => { controls.autoRotate = !controls.autoRotate; autoBtn.setAttribute("aria-pressed", controls.autoRotate); autoBtn.textContent = `Auto-rotate: ${controls.autoRotate ? "on" : "off"}`; });
+
+  // Geometry constants (1 unit ≈ 3 m). x = east, z = south, y = up.
+  const LW = 1.25, MED = 1.0, ROADHALF = MED / 2 + 3 * LW + 0.6, J = ROADHALF + 1.2, ARM = 70, SP = 1.25, STOPGAP = 1.0;
+  const DIRV = { N: [0, 1], S: [0, -1], E: [-1, 0], W: [1, 0] }; // direction of travel (x, z)
+  const left = ([ux, uz]) => [uz, -ux];
+  const right = ([ux, uz]) => [-uz, ux];
+  const off = (k) => MED / 2 + (k + 0.5) * LW;
+  const P = (u, along, lat) => { const l = left(u); return new THREE.Vector3(u[0] * along + l[0] * lat, 0, u[1] * along + l[1] * lat); };
+
+  // Lights
+  const hemi = new THREE.HemisphereLight(0xbfd8ff, 0x2a2420, 0.7); scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -90, right: 90, top: 90, bottom: -90, near: 1, far: 300 });
+  scene.add(sun); scene.add(sun.target);
+
+  const mat = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.85, metalness: 0.05 }, o));
+  const box = (w, h, d, m, x = 0, y = 0, z = 0, shadow = true) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = shadow; b.receiveShadow = true; scene.add(b); return b; };
+
+  // Ground and roads
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), mat(0x3c4a3a)); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; ground.receiveShadow = true; scene.add(ground);
+  const asphaltM = mat(0x2b2f35, { roughness: 0.95 });
+  box(ROADHALF * 2, 0.1, ARM * 2 + 20, asphaltM, 0, 0, 0, false); // Hosur Road (N–S)
+  box(ARM * 2 + 20, 0.1, ROADHALF * 2, asphaltM, 0, 0, 0, false); // Outer Ring Road (E–W)
+  const paintM = mat(0xe9e5d6, { roughness: 0.6 });
+  const amberM = mat(0xf4b73a, { roughness: 0.6 });
+  // Medians and kerbs
+  [[1, 0], [0, 1]].forEach(([ax, az]) => {
+    for (const sgn of [-1, 1]) {
+      const len = ARM + 10 - J;
+      const c = sgn * (J + len / 2);
+      box(ax ? len : MED * 0.8, 0.28, ax ? MED * 0.8 : len, mat(0x8c8a7d), ax ? c : 0, 0.14, ax ? 0 : c);
+    }
+  });
+  // Lane dashes and stop lines
+  for (const d of ["N", "S", "E", "W"]) {
+    const u = DIRV[d];
+    for (let k = 1; k < 3; k++) for (let a = J + 2; a < ARM + 8; a += 3) { const p = P(u, -a, MED / 2 + k * LW); const m = box(u[0] ? 1.4 : 0.12, 0.12, u[0] ? 0.12 : 1.4, paintM, p.x, 0.06, p.z, false); m.receiveShadow = false; }
+    const sl = P(u, -J + 0.2, MED / 2 + 1.5 * LW + 0.1); box(u[0] ? 0.3 : 3 * LW, 0.12, u[0] ? 3 * LW : 0.3, paintM, sl.x, 0.07, sl.z, false);
+    // Zebra crossing
+    for (let i = 0; i < 9; i++) { const lat = -ROADHALF + 0.5 + i * ((ROADHALF * 2 - 1) / 8); const p = P(u, -J - 1.2, lat); box(u[0] ? 1.6 : 0.5, 0.11, u[0] ? 0.5 : 1.6, paintM, p.x, 0.06, p.z, false); }
+  }
+  // Junction box (yellow hatch)
+  for (let i = -3; i <= 3; i++) { const b = box(0.25, 0.115, J * 2.6, amberM, i * 2.2, 0.06, 0, false); b.rotation.y = Math.PI / 4; b.material = amberM; }
+
+  // Metro-works barricade (shown only in that scenario)
+  const works = new THREE.Group(); scene.add(works);
+  { const coneM = mat(0xff7a1a); const stripeM = mat(0xffffff);
+    const u = DIRV.E, lat = off(2);
+    for (let a = J + 2; a < ARM; a += 2.2) { const p = P(u, -a, lat); const c = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.0, 10), coneM); c.position.set(p.x, 0.5, p.z); c.castShadow = true; works.add(c); }
+    const p = P(u, -(J + 22), lat + 0.2); const bar = new THREE.Mesh(new THREE.BoxGeometry(30, 1.6, 0.4), stripeM); bar.position.set(p.x, 0.8, p.z + 0.9); works.add(bar);
+    const bar2 = bar.clone(); bar2.material = coneM; bar2.scale.set(1, 0.5, 1.05); bar2.position.y = 0.8; works.add(bar2);
+    works.visible = false; }
+
+  // Flyover along Hosur Road, and the metro viaduct above it (Silk Board has both)
+  const concrete = mat(0xb9b3a7, { roughness: 0.9 });
+  const FLY_Y = 5.2, METRO_Y = 10.5;
+  box(4.6, 0.6, 150, concrete, 0, FLY_Y, 0);
+  for (let z = -70; z <= 70; z += 14) { if (Math.abs(z) < J + 1) continue; box(1.0, FLY_Y, 1.0, concrete, 0, FLY_Y / 2, z); }
+  box(0.2, 0.7, 150, mat(0xd9d4c8), 2.35, FLY_Y + 0.6, 0); box(0.2, 0.7, 150, mat(0xd9d4c8), -2.35, FLY_Y + 0.6, 0);
+  box(3.4, 0.8, 170, concrete, 0, METRO_Y, 0);
+  for (let z = -77; z <= 77; z += 22) box(1.3, METRO_Y, 1.3, concrete, 6.2, METRO_Y / 2, z), box(6.2, 0.8, 1.3, concrete, 3.1, METRO_Y - 0.4, z);
+  // Station box
+  box(8, 3.6, 18, mat(0xd8d2c4), 0, METRO_Y + 2.3, -34); box(8.4, 0.5, 19, mat(0xf4b73a), 0, METRO_Y + 4.3, -34);
+  // Metro train
+  const train = new THREE.Group(); scene.add(train);
+  for (let i = 0; i < 4; i++) { const car = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.4, 6.2), mat(0xf2f0ea, { roughness: 0.4 })); car.position.set(0, 0, i * 6.5); car.castShadow = true; const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.45, 6.25), mat(0xf4c430)); stripe.position.y = -0.4; car.add(stripe); const win = new THREE.Mesh(new THREE.BoxGeometry(2.66, 0.7, 5.6), mat(0x1c2a38, { emissive: 0x000000 })); win.position.y = 0.5; car.add(win); car.userData.win = win; train.add(car); }
+  train.position.set(-1.1, METRO_Y + 1.7, -120); train.rotation.y = 0;
+
+  // Buildings
+  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const bColors = [0xd8cfc0, 0xc9d3d6, 0xe6dccb, 0xb8c2c9, 0xd2c6b6, 0xa9b4bc, 0xe2d6c6];
+  const winMats = [];
+  const buildings = new THREE.Group(); scene.add(buildings);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    for (let i = 0; i < 22; i++) {
+      const x = sx * (ROADHALF + 7 + rnd() * 66), z = sz * (ROADHALF + 7 + rnd() * 66);
+      const r0 = Math.hypot(x, z);
+      if (sx > 0 && sz < 0 && r0 < 70) continue; // keep the camera's view of the junction open
+      const w = 5 + rnd() * 7, d = 5 + rnd() * 7, h = 3 + Math.pow(rnd(), 2) * (r0 < 40 ? 9 : 30);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(bColors[Math.floor(rnd() * bColors.length)]));
+      b.position.set(x, h / 2, z); b.castShadow = true; b.receiveShadow = true; buildings.add(b);
+      // Window bands (glow at night)
+      const wm = new THREE.MeshStandardMaterial({ color: 0x2b3440, emissive: 0xffc46b, emissiveIntensity: 0, roughness: 0.4 }); winMats.push(wm);
+      for (let y = 2.2; y < h - 1; y += 2.6) { const band = new THREE.Mesh(new THREE.BoxGeometry(w + 0.06, 0.8, d + 0.06), wm); band.position.set(x, y, z); buildings.add(band); }
+    }
+  }
+  // Trees along the roads
+  const trunkM = mat(0x5b4636), leafM = mat(0x3f7d3a);
+  for (let i = 0; i < 70; i++) {
+    const along = J + 6 + rnd() * (ARM - 8), side = rnd() < 0.5 ? -1 : 1, d = ["N", "S", "E", "W"][i % 4], u = DIRV[d];
+    const p = P(u, -along, side * (ROADHALF + 1.8 + rnd() * 1.5));
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 1.6, 6), trunkM); t.position.set(p.x, 0.8, p.z); t.castShadow = true; scene.add(t);
+    const l = new THREE.Mesh(new THREE.SphereGeometry(1.2 + rnd() * 0.8, 8, 6), leafM); l.position.set(p.x, 2.4, p.z); l.castShadow = true; scene.add(l);
+  }
+
+  // Signal heads at each stop line
+  const signals = {};
+  for (const d of ["N", "S", "E", "W"]) {
+    const u = DIRV[d]; const p = P(u, -J + 0.2, ROADHALF + 0.8);
+    box(0.22, 4.2, 0.22, mat(0x333840), p.x, 2.1, p.z);
+    const head = box(0.8, 1.6, 0.8, mat(0x1a1d22), p.x, 4.3, p.z);
+    const red = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 8), new THREE.MeshStandardMaterial({ color: 0x3a1210, emissive: 0xff3b2a, emissiveIntensity: 1 }));
+    const green = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 8), new THREE.MeshStandardMaterial({ color: 0x0f2a18, emissive: 0x2bff7a, emissiveIntensity: 0 }));
+    red.position.set(p.x - u[0] * 0.42, 4.75, p.z - u[1] * 0.42); green.position.set(p.x - u[0] * 0.42, 3.85, p.z - u[1] * 0.42);
+    scene.add(red, green);
+    const glow = new THREE.PointLight(0xff3b2a, 1.2, 9); glow.position.set(p.x - u[0] * 1.2, 4.3, p.z - u[1] * 1.2); scene.add(glow);
+    signals[d] = { red, green, glow };
+  }
+
+  // Jam heat strips under the queues
+  const heat = {};
+  for (const d of ["N", "S", "E", "W"]) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xff3b2a, transparent: true, opacity: 0, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2; m.position.y = 0.13; scene.add(m); heat[d] = m;
+  }
+
+  // Vehicles (instanced): cars, BMTC buses, autos, two-wheelers
+  const MAXV = 1400;
+  const mkInst = (geo, m) => { const im = new THREE.InstancedMesh(geo, m, MAXV); im.castShadow = true; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(im); return im; };
+  const carGeo = new THREE.BoxGeometry(0.62, 0.48, 1.05); carGeo.translate(0, 0.32, 0);
+  const cabGeo = new THREE.BoxGeometry(0.54, 0.3, 0.55); cabGeo.translate(0, 0.7, -0.05);
+  const busGeo = new THREE.BoxGeometry(0.78, 1.0, 2.1); busGeo.translate(0, 0.6, 0);
+  const autoGeo = new THREE.BoxGeometry(0.55, 0.62, 0.8); autoGeo.translate(0, 0.42, 0);
+  const autoTopGeo = new THREE.BoxGeometry(0.58, 0.12, 0.62); autoTopGeo.translate(0, 0.78, -0.05);
+  const bikeGeo = new THREE.BoxGeometry(0.22, 0.55, 0.7); bikeGeo.translate(0, 0.38, 0);
+  const inst = {
+    car: mkInst(carGeo, mat(0xffffff, { roughness: 0.45, metalness: 0.2 })),
+    cab: mkInst(cabGeo, mat(0x1f2a33, { roughness: 0.2 })),
+    bus: mkInst(busGeo, mat(0xd8392c, { roughness: 0.5 })),
+    auto: mkInst(autoGeo, mat(0x2f8f3a, { roughness: 0.5 })),
+    autoTop: mkInst(autoTopGeo, mat(0xf2c230, { roughness: 0.5 })),
+    bike: mkInst(bikeGeo, mat(0x333333, { roughness: 0.5 })),
+  };
+  const carColors = [0xf4f2ec, 0xd7d9dc, 0x9aa1aa, 0x2b2f36, 0xb8322b, 0x2d5d9a, 0xe9e3d2, 0x5a6b4a].map((c) => new THREE.Color(c));
+  const bikeColors = [0x222222, 0x8a1f1f, 0x1f3a8a, 0x555555].map((c) => new THREE.Color(c));
+  // Free-flowing flyover traffic (decor)
+  const flyCars = Array.from({ length: 26 }, (_, i) => ({ z: -75 + i * 6, dir: i % 2 ? 1 : -1, lane: (i % 4) < 2 ? 0 : 1, kind: i % 5 === 0 ? "bike" : "car", c: i % carColors.length, sp: 9 + (i % 3) }));
+
+  // ---------- simulation + agents ----------
+  let scen = DATA.scenarios[0], sims = [], view = 1, playing = true, speedIdx = 1, simClock = 0;
+  const SPEEDS = [30, 60, 150];
+  let agents = { N: [], E: [], S: [], W: [] }, movers = [], ghosts = [], nextId = 1;
+  const kindFor = (id) => { const r = (id * 2654435761 % 1000) / 1000; return r < 0.08 ? "bus" : r < 0.24 ? "auto" : r < 0.46 ? "bike" : "car"; };
+  const lanesOf = (d) => sims[view].lanes[d];
+  function slotPos(d, i) { const n = lanesOf(d); const lane = i % n; const row = Math.floor(i / n); return P(DIRV[d], -(J + STOPGAP + row * SP), off(lane)); }
+  function spawn(d, atSlot) {
+    const a = { id: nextId++, d, kind: null, c: 0 }; a.kind = kindFor(a.id); a.c = a.id % (a.kind === "bike" ? bikeColors.length : carColors.length);
+    const i = agents[d].length; const n = lanesOf(d);
+    a.pos = atSlot ? slotPos(d, i) : P(DIRV[d], -(ARM + 6), off(i % n));
+    a.yaw = Math.atan2(DIRV[d][0], DIRV[d][1]); agents[d].push(a); return a;
+  }
+  function release(d) {
+    const a = agents[d].shift(); if (!a) return;
+    const u = DIRV[d], n = lanesOf(d), lane = Math.round((Math.abs((a.pos.x * left(u)[0] + a.pos.z * left(u)[1])) - MED / 2) / LW - 0.5);
+    const k = Math.max(0, Math.min(2, lane));
+    const turn = a.id % 5 === 0 ? "right" : "straight";
+    const p0 = a.pos.clone(), entry = P(u, -J, off(k));
+    let ctrl, p2, exitU;
+    if (turn === "straight") { exitU = u; ctrl = new THREE.Vector3(0, 0, 0).addVectors(entry, P(u, J, off(k))).multiplyScalar(0.5); p2 = P(u, J, off(k)); }
+    else { exitU = right(u); p2 = P(exitU, J, off(Math.min(k, 1))); const du = (p2.x - entry.x) * u[0] + (p2.z - entry.z) * u[1]; ctrl = new THREE.Vector3(entry.x + u[0] * du, 0, entry.z + u[1] * du); }
+    movers.push({ ...a, p0, entry, ctrl, p2, exitU, k: turn === "straight" ? k : Math.min(k, 1), s: 0, phase: 0 });
+  }
+  function rebuild() {
+    agents = { N: [], E: [], S: [], W: [] }; movers = []; ghosts = [];
+    for (const d of ["N", "E", "S", "W"]) for (let i = 0; i < sims[view].q[d]; i++) spawn(d, true);
+  }
+  function start() {
+    const a = DATA.runs[0][scen.id].plan, b = DATA.runs[BEST][scen.id].plan;
+    sims = [new Sim(scen, a), new Sim(scen, b)]; simClock = 0; rebuild(); setMood(); renderRuns(); playing = true; playBtn.textContent = "Pause";
+  }
+  function stepSims(n) {
+    for (let k = 0; k < n; k++) {
+      if (sims[0].t >= sims[0].T) { playing = false; playBtn.textContent = "Replay"; return; }
+      sims.forEach((s) => s.step());
+      const ev = sims[view].ev;
+      for (const d of ["N", "E", "S", "W"]) {
+        for (let i = 0; i < ev.srv[d]; i++) release(d);
+        for (let i = 0; i < ev.arr[d]; i++) spawn(d, false);
+        for (let i = 0; i < ev.blk[d]; i++) { const g = { d, kind: kindFor(nextId++), pos: P(DIRV[d], -(ARM - 2), off(i % lanesOf(d))), t: 0 }; ghosts.push(g); }
+      }
+    }
+  }
+
+  // ---------- moods (time of day, weather) ----------
+  const fog = new THREE.Fog(0x9fb4c8, 140, 420); scene.fog = fog;
+  const rainGeo = new THREE.BufferGeometry(); const RN = 2600; const rp = new Float32Array(RN * 6);
+  for (let i = 0; i < RN; i++) { const x = (Math.random() - .5) * 200, y = Math.random() * 70, z = (Math.random() - .5) * 200; rp.set([x, y, z, x - 0.25, y - 1.6, z], i * 6); }
+  rainGeo.setAttribute("position", new THREE.BufferAttribute(rp, 3));
+  const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: 0xa9c4dd, transparent: true, opacity: 0.5 })); scene.add(rain);
+  const MOODS = {
+    "01-morning-rush": { sky: 0xf2d9b6, hemi: [0xffe9cc, 0x3a3226, 0.8], sun: [0xffd9a0, 1.25, [-80, 60, 40]], night: 0, rain: false, label: "Clear morning · 8:30–9:30" },
+    "02-evening-rush": { sky: 0xe39a6a, hemi: [0xffb98a, 0x2a2030, 0.6], sun: [0xff9a55, 1.0, [90, 28, -30]], night: 0.45, rain: false, label: "Sunset · 6:15–7:15 PM" },
+    "03-monsoon-rain": { sky: 0x6f7c88, hemi: [0x9fb0c0, 0x22262a, 0.75], sun: [0xc8d2dc, 0.45, [-40, 80, 20]], night: 0.25, rain: true, label: "Monsoon downpour · flows −20%" },
+    "04-midday-shift-change": { sky: 0xa9d2f2, hemi: [0xe8f3ff, 0x3c3a30, 0.85], sun: [0xffffff, 1.35, [20, 100, 30]], night: 0, rain: false, label: "Bright midday · 1:30–2:30 PM" },
+    "05-holdout-ipl-night": { sky: 0x101827, hemi: [0x445a80, 0x0b0c10, 0.45], sun: [0x8fa8d8, 0.35, [-50, 70, -60]], night: 1, rain: false, label: "Night after an IPL match · holdout" },
+    "06-holdout-metro-works": { sky: 0xb7cfe0, hemi: [0xf1f6ff, 0x3c3a30, 0.8], sun: [0xfff1d8, 1.2, [-60, 75, 50]], night: 0, rain: false, label: "Metro works: one ORR lane closed · holdout" },
+  };
+  function setMood() {
+    const m = MOODS[scen.id];
+    scene.background = new THREE.Color(m.sky); fog.color = new THREE.Color(m.sky);
+    hemi.color.setHex(m.hemi[0]); hemi.groundColor.setHex(m.hemi[1]); hemi.intensity = m.hemi[2];
+    sun.color.setHex(m.sun[0]); sun.intensity = m.sun[1]; sun.position.set(...m.sun[2]);
+    winMats.forEach((w, i) => (w.emissiveIntensity = m.night * (i % 3 ? 0.9 : 0.25)));
+    train.children.forEach((c) => c.userData.win.material.emissive.setHex(m.night ? 0xfff1c8 : 0x000000));
+    rain.visible = m.rain; works.visible = scen.id === "06-holdout-metro-works";
+    asphaltM.color.setHex(m.rain ? 0x24282d : 0x2b2f35); asphaltM.roughness = m.rain ? 0.35 : 0.95; asphaltM.metalness = m.rain ? 0.25 : 0.05;
+    document.getElementById("scenName").textContent = scen.title.replace(" (holdout)", "");
+    document.getElementById("weather").textContent = m.label;
+  }
+
+  // ---------- HUD ----------
+  const fmt = (sec) => { const [h, m] = scen.windows[0].label.split(":").map(Number); const t = h * 60 + m + Math.floor(sec / 60); const H = Math.floor(t / 60) % 24; return `${H % 12 || 12}:${String(t % 60).padStart(2, "0")}`; };
+  const runA = document.getElementById("runA"), runB = document.getElementById("runB");
+  function runHTML(i) {
+    const s = sims[i], n = i ? BEST : 0, sc = DATA.runs[n][scen.id].score, waiting = ["N", "E", "S", "W"].reduce((a, d) => a + s.q[d], 0);
+    const cls = i ? "cool" : "hot";
+    return `<div class="rh"><b>Run ${n + 1}</b><span>${i ? "after learning" : "before learning"} · score ${sc.toFixed(2)}</span><span class="viewing">on screen</span></div>
+      <div class="nums"><div><b class="${cls}">${s.avg().toFixed(0)} s</b><small>average wait so far</small></div><div><b>${waiting}</b><small>waiting now</small></div><div><b class="${s.blocked ? "hot" : ""}">${s.blocked}</b><small>turned away by gridlock</small></div></div>`;
+  }
+  function renderRuns() { runA.innerHTML = runHTML(0); runB.innerHTML = runHTML(1); runA.setAttribute("aria-pressed", view === 0); runB.setAttribute("aria-pressed", view === 1); document.getElementById("clock").textContent = fmt(Math.min(sims[0].t, sims[0].T - 1)); }
+  runA.addEventListener("click", () => { view = 0; rebuild(); renderRuns(); });
+  runB.addEventListener("click", () => { view = 1; rebuild(); renderRuns(); });
+  const playBtn = document.getElementById("play");
+  playBtn.addEventListener("click", () => { if (sims[0].t >= sims[0].T) { start(); return; } playing = !playing; playBtn.textContent = playing ? "Pause" : "Play"; });
+  document.getElementById("restart").addEventListener("click", start);
+  // Fast-forward both runs to the start of the busiest window (the same moment in both).
+  document.getElementById("peak").addEventListener("click", () => {
+    const peak = scen.windows.reduce((b, w, i) => (Object.values(w.demand).reduce((a, x) => a + x, 0) > Object.values(scen.windows[b].demand).reduce((a, x) => a + x, 0) ? i : b), 0);
+    const target = scen.windows.slice(0, peak).reduce((a, w) => a + w.minutes * 60, 0) + 120;
+    if (sims[0].t > target) { sims = [new Sim(scen, DATA.runs[0][scen.id].plan), new Sim(scen, DATA.runs[BEST][scen.id].plan)]; }
+    while (sims[0].t < target) sims.forEach((x) => x.step());
+    rebuild(); renderRuns(); playing = true; playBtn.textContent = "Pause";
+  });
+  const speedBtn = document.getElementById("speed");
+  speedBtn.addEventListener("click", () => { speedIdx = (speedIdx + 1) % SPEEDS.length; speedBtn.textContent = `Speed ${["½", "1", "2½"][speedIdx]}×`; });
+  const chips = document.getElementById("chips");
+  chips.innerHTML = DATA.scenarios.map((s, i) => `<button class="chip" type="button" data-i="${i}" aria-pressed="${i === 0}">${s.title.replace(" (holdout)", "")}${s.holdout ? "<small>holdout</small>" : ""}</button>`).join("");
+  chips.addEventListener("click", (e) => { const b = e.target.closest(".chip"); if (!b) return; scen = DATA.scenarios[+b.dataset.i]; chips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c === b)); start(); });
+
+  // Arm labels
+  const labelsEl = document.getElementById("labels");
+  const NAMES = { N: "Hosur Rd · from Madiwala", S: "Hosur Rd · from Electronic City", E: "ORR · from HSR Layout", W: "ORR · from BTM Layout" };
+  const lbls = {};
+  for (const d of ["N", "E", "S", "W"]) { const el = document.createElement("div"); el.className = "lbl"; labelsEl.appendChild(el); lbls[d] = { el, p: P(DIRV[d], -(J + 30), off(1)).setY(3.2) }; }
+
+  // ---------- render loop ----------
+  const dummy = new THREE.Object3D(); const tmp = new THREE.Vector3();
+  let last = performance.now(), acc = 0;
+  function place(im, idx, pos, yaw, scale = 1, color) { dummy.position.copy(pos); dummy.rotation.set(0, yaw, 0); dummy.scale.setScalar(scale); dummy.updateMatrix(); im.setMatrixAt(idx, dummy.matrix); if (color) im.setColorAt(idx, color); }
+  function bez(a, c, b, t, out) { const u = 1 - t; return out.set(u * u * a.x + 2 * u * t * c.x + t * t * b.x, 0, u * u * a.z + 2 * u * t * c.z + t * t * b.z); }
+  function frame(now) {
+    const rawDt = (now - last) / 1000, dt = Math.min(0.05, rawDt); last = now;
+    if (playing && sims.length) { acc += dt * SPEEDS[speedIdx]; const n = Math.floor(acc); acc -= n; if (n) { stepSims(n); renderRuns(); } }
+    const s = sims[view];
+    // Signals
+    const g = s && s.green;
+    for (const d of ["N", "E", "S", "W"]) { const on = g === d; signals[d].green.material.emissiveIntensity = on ? 2.2 : 0; signals[d].red.material.emissiveIntensity = on ? 0 : 2.0; signals[d].glow.color.setHex(on ? 0x2bff7a : 0xff3b2a); }
+    // Queue agents glide to their slots
+    const counts = { car: 0, cab: 0, bus: 0, auto: 0, autoTop: 0, bike: 0 };
+    const draw = (a, pos, yaw, scale = 1) => {
+      if (a.kind === "car") { place(inst.car, counts.car++, pos, yaw, scale, carColors[a.c]); place(inst.cab, counts.cab++, pos, yaw, scale); }
+      else if (a.kind === "bus") place(inst.bus, counts.bus++, pos, yaw, scale);
+      else if (a.kind === "auto") { place(inst.auto, counts.auto++, pos, yaw, scale); place(inst.autoTop, counts.autoTop++, pos, yaw, scale); }
+      else place(inst.bike, counts.bike++, pos, yaw, scale, bikeColors[a.c]);
+    };
+    for (const d of ["N", "E", "S", "W"]) {
+      const list = agents[d];
+      for (let i = 0; i < list.length; i++) {
+        const a = list[i], target = slotPos(d, i);
+        const dist = a.pos.distanceTo(target), step = Math.max(14 * dt, dist * 4 * dt);
+        if (dist > 0.001) a.pos.lerp(target, Math.min(1, step / dist));
+        if (counts.car < MAXV - 4) draw(a, a.pos, a.yaw);
+      }
+      // Heat strip: how long the queue is
+      const rows = Math.ceil(list.length / lanesOf(d)); const len = Math.max(0.01, rows * SP);
+      const mid = P(DIRV[d], -(J + STOPGAP + len / 2 - 0.5), MED / 2 + 1.5 * LW + 0.1);
+      heat[d].position.set(mid.x, 0.13, mid.z); heat[d].scale.set(DIRV[d][0] ? len : 3 * LW + 0.4, DIRV[d][0] ? 3 * LW + 0.4 : len, 1);
+      heat[d].material.opacity = Math.min(0.55, 0.08 + list.length / (lanesOf(d) * 40) * 0.6);
+      lbls[d].el.innerHTML = `${NAMES[d]} · <span class="q">${list.length} waiting</span>`;
+    }
+    // Vehicles crossing the junction and driving away
+    for (let i = movers.length - 1; i >= 0; i--) {
+      const m = movers[i]; const v = 16 * dt;
+      if (m.phase === 0) { const d0 = m.p0.distanceTo(m.entry); if (d0 > v) { m.p0.lerp(m.entry, v / d0); m.pos = m.p0; } else m.phase = 1; }
+      else if (m.phase === 1) { m.s += dt * 1.1; if (m.s >= 1) { m.phase = 2; m.along = J; } else { const prev = m.pos.clone(); bez(m.entry, m.ctrl, m.p2, m.s, tmp); m.pos = tmp.clone(); m.yaw = Math.atan2(m.pos.x - prev.x, m.pos.z - prev.z) || m.yaw; } }
+      else { m.along += v * 1.2; m.pos = P(m.exitU, m.along, off(m.k)); m.yaw = Math.atan2(m.exitU[0], m.exitU[1]); if (m.along > ARM + 10) { movers.splice(i, 1); continue; } }
+      if (counts.car < MAXV - 4) draw(m, m.pos, m.yaw);
+    }
+    // Gridlocked arrivals: flash red and vanish at the end of the arm
+    for (let i = ghosts.length - 1; i >= 0; i--) { const gh = ghosts[i]; gh.t += dt; if (gh.t > 1.2) { ghosts.splice(i, 1); continue; } const sc = 1 + Math.sin(gh.t * 20) * 0.15; place(inst.bus, counts.bus++, gh.pos.clone().setY(gh.t * 2), Math.atan2(DIRV[gh.d][0], DIRV[gh.d][1]), sc); }
+    // Flyover traffic flows freely
+    for (const f of flyCars) { f.z += f.dir * f.sp * dt; if (f.z > 75) f.z = -75; if (f.z < -75) f.z = 75; const pos = tmp.set(f.dir > 0 ? 0.6 + f.lane * 0.95 : -0.6 - f.lane * 0.95, FLY_Y + 0.3, f.z).clone(); draw({ kind: f.kind, c: f.c }, pos, f.dir > 0 ? 0 : Math.PI); }
+    for (const k in inst) { inst[k].count = counts[k]; inst[k].instanceMatrix.needsUpdate = true; if (inst[k].instanceColor) inst[k].instanceColor.needsUpdate = true; }
+    // Metro train glides through the station
+    train.position.z += 7 * dt; if (train.position.z > 120) train.position.z = -140;
+    if (rain.visible) { const arr = rain.geometry.attributes.position.array; for (let i = 0; i < arr.length; i += 6) { arr[i + 1] -= 60 * dt; arr[i + 4] -= 60 * dt; if (arr[i + 4] < 0) { arr[i + 1] += 70; arr[i + 4] += 70; } } rain.geometry.attributes.position.needsUpdate = true; }
+    if (tween) {
+      tween.k = Math.min(1, tween.k + Math.min(0.25, rawDt) / 0.9); const e = tween.k < 0.5 ? 2 * tween.k * tween.k : 1 - Math.pow(-2 * tween.k + 2, 2) / 2;
+      camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.t0, tween.t1, e);
+      if (tween.k >= 1) tween = null;
+    }
+    controls.minDistance = tween ? 0 : 6;
+    controls.update();
+    // Labels follow the arms
+    const rect = canvas.getBoundingClientRect();
+    for (const d in lbls) { const v3 = lbls[d].p.clone().project(camera); const vis = v3.z < 1 && Math.abs(v3.x) < 1.1 && Math.abs(v3.y) < 1.1; lbls[d].el.style.display = vis ? "block" : "none"; lbls[d].el.style.left = `${((v3.x + 1) / 2) * rect.width}px`; lbls[d].el.style.top = `${((1 - v3.y) / 2) * rect.height}px`; }
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+  let firstSize = true;
+  const resizeView = () => { if (firstSize) { setView("overview", true); firstSize = false; } };
+  window.addEventListener("resize", resize); resize(); resizeView();
+  start(); requestAnimationFrame(frame);
+})();
+</script>
