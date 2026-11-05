@@ -1,0 +1,108 @@
+{
+  "id": "03-monsoon-rain",
+  "title": "Monsoon downpour",
+  "holdout": false,
+  "description": "Monday, 8:45 to 9:45 AM, heavy rain. Fewer two-wheelers, water on the road, everyone drives slower.",
+  "approaches": [
+    {
+      "id": "N",
+      "name": "Hosur Road from Madiwala (city side)",
+      "lanes": 3
+    },
+    {
+      "id": "E",
+      "name": "Outer Ring Road from HSR Layout / Agara",
+      "lanes": 3
+    },
+    {
+      "id": "S",
+      "name": "Hosur Road from Bommanahalli / Electronic City",
+      "lanes": 3
+    },
+    {
+      "id": "W",
+      "name": "Outer Ring Road from BTM Layout",
+      "lanes": 2
+    }
+  ],
+  "windows": [
+    {
+      "label": "8:45",
+      "minutes": 15,
+      "demand": {
+        "N": 500,
+        "E": 760,
+        "S": 760,
+        "W": 320
+      }
+    },
+    {
+      "label": "9:00",
+      "minutes": 15,
+      "demand": {
+        "N": 550,
+        "E": 850,
+        "S": 850,
+        "W": 350
+      }
+    },
+    {
+      "label": "9:15",
+      "minutes": 15,
+      "demand": {
+        "N": 580,
+        "E": 890,
+        "S": 890,
+        "W": 370
+      }
+    },
+    {
+      "label": "9:30",
+      "minutes": 15,
+      "demand": {
+        "N": 520,
+        "E": 810,
+        "S": 810,
+        "W": 330
+      }
+    }
+  ],
+  "hidden": {
+    "seed": 37,
+    "sat_factor": {
+      "N": 0.76,
+      "E": 0.72,
+      "S": 0.48,
+      "W": 0.68
+    }
+  },
+  "reference": {
+    "avg_delay": 88.807,
+    "plan": [
+      {
+        "N": 34,
+        "E": 35,
+        "S": 53,
+        "W": 24
+      },
+      {
+        "N": 34,
+        "E": 55,
+        "S": 76,
+        "W": 36
+      },
+      {
+        "N": 46,
+        "E": 75,
+        "S": 112,
+        "W": 49
+      },
+      {
+        "N": 33,
+        "E": 44,
+        "S": 57,
+        "W": 30
+      }
+    ]
+  }
+}

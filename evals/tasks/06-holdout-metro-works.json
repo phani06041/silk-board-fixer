@@ -1,0 +1,108 @@
+{
+  "id": "06-holdout-metro-works",
+  "title": "Metro works lane closure (holdout)",
+  "holdout": true,
+  "description": "Friday, 8:30 to 9:30 AM. Pink Line metro works have closed one lane of the Outer Ring Road approach from HSR.",
+  "approaches": [
+    {
+      "id": "N",
+      "name": "Hosur Road from Madiwala (city side)",
+      "lanes": 3
+    },
+    {
+      "id": "E",
+      "name": "Outer Ring Road from HSR Layout / Agara",
+      "lanes": 2
+    },
+    {
+      "id": "S",
+      "name": "Hosur Road from Bommanahalli / Electronic City",
+      "lanes": 3
+    },
+    {
+      "id": "W",
+      "name": "Outer Ring Road from BTM Layout",
+      "lanes": 2
+    }
+  ],
+  "windows": [
+    {
+      "label": "8:30",
+      "minutes": 15,
+      "demand": {
+        "N": 510,
+        "E": 680,
+        "S": 720,
+        "W": 340
+      }
+    },
+    {
+      "label": "8:45",
+      "minutes": 15,
+      "demand": {
+        "N": 600,
+        "E": 800,
+        "S": 850,
+        "W": 400
+      }
+    },
+    {
+      "label": "9:00",
+      "minutes": 15,
+      "demand": {
+        "N": 650,
+        "E": 860,
+        "S": 920,
+        "W": 430
+      }
+    },
+    {
+      "label": "9:15",
+      "minutes": 15,
+      "demand": {
+        "N": 540,
+        "E": 720,
+        "S": 760,
+        "W": 360
+      }
+    }
+  ],
+  "hidden": {
+    "seed": 67,
+    "sat_factor": {
+      "N": 0.95,
+      "E": 0.9,
+      "S": 0.6,
+      "W": 0.85
+    }
+  },
+  "reference": {
+    "avg_delay": 61.749,
+    "plan": [
+      {
+        "N": 14,
+        "E": 30,
+        "S": 31,
+        "W": 16
+      },
+      {
+        "N": 23,
+        "E": 47,
+        "S": 49,
+        "W": 26
+      },
+      {
+        "N": 36,
+        "E": 65,
+        "S": 69,
+        "W": 34
+      },
+      {
+        "N": 15,
+        "E": 34,
+        "S": 36,
+        "W": 18
+      }
+    ]
+  }
+}

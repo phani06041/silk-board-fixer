@@ -1,0 +1,108 @@
+{
+  "id": "01-morning-rush",
+  "title": "Weekday morning rush",
+  "holdout": false,
+  "description": "Tuesday, 8:30 to 9:30 AM. Office traffic from Electronic City and HSR heads towards the city and Koramangala.",
+  "approaches": [
+    {
+      "id": "N",
+      "name": "Hosur Road from Madiwala (city side)",
+      "lanes": 3
+    },
+    {
+      "id": "E",
+      "name": "Outer Ring Road from HSR Layout / Agara",
+      "lanes": 3
+    },
+    {
+      "id": "S",
+      "name": "Hosur Road from Bommanahalli / Electronic City",
+      "lanes": 3
+    },
+    {
+      "id": "W",
+      "name": "Outer Ring Road from BTM Layout",
+      "lanes": 2
+    }
+  ],
+  "windows": [
+    {
+      "label": "8:30",
+      "minutes": 15,
+      "demand": {
+        "N": 510,
+        "E": 810,
+        "S": 810,
+        "W": 340
+      }
+    },
+    {
+      "label": "8:45",
+      "minutes": 15,
+      "demand": {
+        "N": 600,
+        "E": 950,
+        "S": 950,
+        "W": 400
+      }
+    },
+    {
+      "label": "9:00",
+      "minutes": 15,
+      "demand": {
+        "N": 660,
+        "E": 1040,
+        "S": 1040,
+        "W": 440
+      }
+    },
+    {
+      "label": "9:15",
+      "minutes": 15,
+      "demand": {
+        "N": 540,
+        "E": 860,
+        "S": 860,
+        "W": 360
+      }
+    }
+  ],
+  "hidden": {
+    "seed": 11,
+    "sat_factor": {
+      "N": 0.95,
+      "E": 0.9,
+      "S": 0.6,
+      "W": 0.85
+    }
+  },
+  "reference": {
+    "avg_delay": 58.875,
+    "plan": [
+      {
+        "N": 26,
+        "E": 26,
+        "S": 37,
+        "W": 21
+      },
+      {
+        "N": 21,
+        "E": 35,
+        "S": 52,
+        "W": 23
+      },
+      {
+        "N": 30,
+        "E": 50,
+        "S": 69,
+        "W": 34
+      },
+      {
+        "N": 17,
+        "E": 25,
+        "S": 38,
+        "W": 17
+      }
+    ]
+  }
+}

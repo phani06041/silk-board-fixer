@@ -1,0 +1,108 @@
+{
+  "id": "02-evening-rush",
+  "title": "Weekday evening rush",
+  "holdout": false,
+  "description": "Thursday, 6:15 to 7:15 PM. The reverse flow: offices empty out from the city and BTM towards Electronic City and HSR.",
+  "approaches": [
+    {
+      "id": "N",
+      "name": "Hosur Road from Madiwala (city side)",
+      "lanes": 3
+    },
+    {
+      "id": "E",
+      "name": "Outer Ring Road from HSR Layout / Agara",
+      "lanes": 3
+    },
+    {
+      "id": "S",
+      "name": "Hosur Road from Bommanahalli / Electronic City",
+      "lanes": 3
+    },
+    {
+      "id": "W",
+      "name": "Outer Ring Road from BTM Layout",
+      "lanes": 2
+    }
+  ],
+  "windows": [
+    {
+      "label": "6:15",
+      "minutes": 15,
+      "demand": {
+        "N": 900,
+        "E": 720,
+        "S": 540,
+        "W": 500
+      }
+    },
+    {
+      "label": "6:30",
+      "minutes": 15,
+      "demand": {
+        "N": 1050,
+        "E": 840,
+        "S": 630,
+        "W": 580
+      }
+    },
+    {
+      "label": "6:45",
+      "minutes": 15,
+      "demand": {
+        "N": 1100,
+        "E": 880,
+        "S": 660,
+        "W": 600
+      }
+    },
+    {
+      "label": "7:00",
+      "minutes": 15,
+      "demand": {
+        "N": 950,
+        "E": 760,
+        "S": 570,
+        "W": 520
+      }
+    }
+  ],
+  "hidden": {
+    "seed": 23,
+    "sat_factor": {
+      "N": 0.95,
+      "E": 0.9,
+      "S": 0.6,
+      "W": 0.85
+    }
+  },
+  "reference": {
+    "avg_delay": 58.742,
+    "plan": [
+      {
+        "N": 25,
+        "E": 21,
+        "S": 24,
+        "W": 30
+      },
+      {
+        "N": 41,
+        "E": 31,
+        "S": 36,
+        "W": 40
+      },
+      {
+        "N": 45,
+        "E": 40,
+        "S": 45,
+        "W": 39
+      },
+      {
+        "N": 29,
+        "E": 24,
+        "S": 27,
+        "W": 24
+      }
+    ]
+  }
+}

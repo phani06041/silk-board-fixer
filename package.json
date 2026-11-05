@@ -1,0 +1,28 @@
+{
+  "name": "silk-board-fixer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Silk Board Fixer: an agent that times Bengaluru's worst junction and gets better every run. Built on TrueForge for Stranger Builds.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.14"
+  },
+  "scripts": {
+    "setup": "tsx scripts/setup.ts",
+    "run-evals": "tsx scripts/run-evals.ts",
+    "improve": "tsx scripts/improve.ts",
+    "export-session": "tsx scripts/export-session.ts",
+    "score": "tsx evals/score.ts",
+    "typecheck": "tsc --noEmit",
+    "reference": "tsx evals/score.ts --reference"
+  },
+  "dependencies": {
+    "@truefoundry/trueforge-sdk": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

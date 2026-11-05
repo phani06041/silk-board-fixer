@@ -1,0 +1,108 @@
+{
+  "id": "04-midday-shift-change",
+  "title": "Midday shift change",
+  "holdout": false,
+  "description": "Wednesday, 1:30 to 2:30 PM. IT campuses in Electronic City change shifts, and city traffic is steady.",
+  "approaches": [
+    {
+      "id": "N",
+      "name": "Hosur Road from Madiwala (city side)",
+      "lanes": 3
+    },
+    {
+      "id": "E",
+      "name": "Outer Ring Road from HSR Layout / Agara",
+      "lanes": 3
+    },
+    {
+      "id": "S",
+      "name": "Hosur Road from Bommanahalli / Electronic City",
+      "lanes": 3
+    },
+    {
+      "id": "W",
+      "name": "Outer Ring Road from BTM Layout",
+      "lanes": 2
+    }
+  ],
+  "windows": [
+    {
+      "label": "1:30",
+      "minutes": 15,
+      "demand": {
+        "N": 800,
+        "E": 600,
+        "S": 900,
+        "W": 450
+      }
+    },
+    {
+      "label": "1:45",
+      "minutes": 15,
+      "demand": {
+        "N": 920,
+        "E": 690,
+        "S": 1040,
+        "W": 520
+      }
+    },
+    {
+      "label": "2:00",
+      "minutes": 15,
+      "demand": {
+        "N": 800,
+        "E": 600,
+        "S": 900,
+        "W": 450
+      }
+    },
+    {
+      "label": "2:15",
+      "minutes": 15,
+      "demand": {
+        "N": 680,
+        "E": 510,
+        "S": 760,
+        "W": 380
+      }
+    }
+  ],
+  "hidden": {
+    "seed": 41,
+    "sat_factor": {
+      "N": 0.95,
+      "E": 0.9,
+      "S": 0.6,
+      "W": 0.85
+    }
+  },
+  "reference": {
+    "avg_delay": 61.837,
+    "plan": [
+      {
+        "N": 25,
+        "E": 20,
+        "S": 39,
+        "W": 24
+      },
+      {
+        "N": 48,
+        "E": 34,
+        "S": 77,
+        "W": 42
+      },
+      {
+        "N": 27,
+        "E": 20,
+        "S": 45,
+        "W": 24
+      },
+      {
+        "N": 14,
+        "E": 14,
+        "S": 28,
+        "W": 16
+      }
+    ]
+  }
+}

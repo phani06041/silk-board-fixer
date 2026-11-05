@@ -1,0 +1,108 @@
+{
+  "id": "05-holdout-ipl-night",
+  "title": "IPL match night (holdout)",
+  "holdout": true,
+  "description": "Saturday, 10:30 to 11:30 PM. An IPL match at Chinnaswamy has just ended; fans head home to the south and east of the city.",
+  "approaches": [
+    {
+      "id": "N",
+      "name": "Hosur Road from Madiwala (city side)",
+      "lanes": 3
+    },
+    {
+      "id": "E",
+      "name": "Outer Ring Road from HSR Layout / Agara",
+      "lanes": 3
+    },
+    {
+      "id": "S",
+      "name": "Hosur Road from Bommanahalli / Electronic City",
+      "lanes": 3
+    },
+    {
+      "id": "W",
+      "name": "Outer Ring Road from BTM Layout",
+      "lanes": 2
+    }
+  ],
+  "windows": [
+    {
+      "label": "10:30",
+      "minutes": 15,
+      "demand": {
+        "N": 770,
+        "E": 350,
+        "S": 320,
+        "W": 420
+      }
+    },
+    {
+      "label": "10:45",
+      "minutes": 15,
+      "demand": {
+        "N": 1320,
+        "E": 600,
+        "S": 540,
+        "W": 720
+      }
+    },
+    {
+      "label": "11:00",
+      "minutes": 15,
+      "demand": {
+        "N": 1380,
+        "E": 620,
+        "S": 560,
+        "W": 750
+      }
+    },
+    {
+      "label": "11:15",
+      "minutes": 15,
+      "demand": {
+        "N": 880,
+        "E": 400,
+        "S": 360,
+        "W": 480
+      }
+    }
+  ],
+  "hidden": {
+    "seed": 53,
+    "sat_factor": {
+      "N": 0.95,
+      "E": 0.9,
+      "S": 0.6,
+      "W": 0.85
+    }
+  },
+  "reference": {
+    "avg_delay": 59.463,
+    "plan": [
+      {
+        "N": 17,
+        "E": 8,
+        "S": 11,
+        "W": 15
+      },
+      {
+        "N": 54,
+        "E": 26,
+        "S": 38,
+        "W": 47
+      },
+      {
+        "N": 64,
+        "E": 32,
+        "S": 48,
+        "W": 65
+      },
+      {
+        "N": 24,
+        "E": 11,
+        "S": 17,
+        "W": 22
+      }
+    ]
+  }
+}
