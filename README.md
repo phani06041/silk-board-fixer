@@ -27,6 +27,7 @@ run-evals ──► simulator report per window & approach ──► improve (ag
 | 3 | 87.6 | 86.0 | 75 s | padded Electronic City extra: backfired |
 | 4 | **96.1** | **94.3** | **67 s** | saw the dip in its score history, removed the padding, added a capacity check |
 | 5 | 93.8 | 91.0 | 69 s | kept the last window's cycle longer (no real gain) |
+| 6 | 92.3 | 83.5 | 70 s | same playbook, now loaded as a real TrueForge skill in the sandbox |
 
 ## Why the improvement is real
 
@@ -78,9 +79,12 @@ git show            # review. Drop it with: git reset --hard HEAD~1
 
 ## TrueForge features used
 
+- **Skills:** the playbook (`agent/skills/signal-playbook/SKILL.md`) is a real TrueForge skill: `"skill_mode": "git"` in `agent/agent.json`, registered by `npm run setup` from this public repo and pinned to the commit that runs. The agent rewrites it itself.
+- **Sandbox:** skills run in TrueForge's sandbox (enabled in `syncAgent`, `scripts/lib.ts`; the macOS local sandbox). Run 6 ([`f14aea2`](../../commit/f14aea2), session `01m6ngkzvtvndzjh2jt7w8d6gd`) used both: 16 tool calls, score 92.31 on the same tasks and scorer.
 - **SDK:** every run and every self-rewrite is a TrueForge session, created and exported through `@truefoundry/trueforge-sdk`.
-- **TrueFoundry AI Gateway** as the model provider.
-- **Skills (`skill_mode: "git"`):** the playbook can run as a real versioned TrueForge skill pinned to the commit that runs (macOS has a built-in sandbox; set `SKILL_REPO_URL` in `.env` and push before each run).
+- **TrueFoundry AI Gateway** as the model provider (Claude Sonnet 5.5).
+
+Runs 1–5 used `skill_mode: "inline"` (the same playbook pasted into the instructions); run 6 switched to real skills in the sandbox without changing tasks, scorer or model.
 
 ## What the judges check
 
