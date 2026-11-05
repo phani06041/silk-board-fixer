@@ -1,0 +1,236 @@
+[
+  {
+    "task_id": "01-morning-rush",
+    "holdout": false,
+    "reference_delay": 58.875,
+    "score": 0.8932,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 65.92,
+    "blocked": 0,
+    "plan": [
+      {
+        "N": 12,
+        "E": 21,
+        "S": 33,
+        "W": 13
+      },
+      {
+        "N": 16,
+        "E": 29,
+        "S": 48,
+        "W": 18
+      },
+      {
+        "N": 26,
+        "E": 44,
+        "S": 65,
+        "W": 29
+      },
+      {
+        "N": 13,
+        "E": 22,
+        "S": 35,
+        "W": 14
+      }
+    ],
+    "turn_id": "01m6n3n5xw3k388h201exhh2vx",
+    "status": "done",
+    "reply": "**Method.** I used the dry discharge rates from the playbook. Each approach's capacity is lanes × flow per lane: N 4980, E 4680, S 3195 and W 3000 vehicles per hour. The listed arrivals are hourly rates, so y = rate ÷ capacity. Lost time is 16 s per cycle, so total green = C − 16 s. I started from the Webster cycle C = 29/(1 − Y). I then added margin where demand is rising, so no backlog carries forward. S is padded slightly because it is the bottleneck.\n\n| Window | Sum of y (Y) | Cycle used | Greens (N/E/S/W) | Capacity ÷ demand |\n|---|---|---|---|---|\n| 8:30 | 0.64 | 95 s | 12/21/33/13 | about 1.3 |\n| 8:45 | 0.75 | 127 s | 16/29/48/18 | about 1.16 |\n| 9:00 (peak) | 0.83 | 180 s | 26/44/65/29 | 1.09–1.11 for every approach |\n| 9:15 | 0.68 | 100 s | 13/22/35/14 | about 1.2 |\n\n- **Peak window.** The Webster cycle is 168 s. I lengthened it to 180 s so S could be padded without pushing N or W below about 1.05× demand. All four approaches then keep about 1.1× capacity.\n- **Last window.** The cycle is slightly longer than Webster, which would be about 91 s. This clears any leftover queue so few vehicles are still queued at 9:30.\n- **Gridlock.** No approach should build a large queue. All greens are within the 7–150 s limits.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 12, \"E\": 21, \"S\": 33, \"W\": 13 },\n    { \"N\": 16, \"E\": 29, \"S\": 48, \"W\": 18 },\n    { \"N\": 26, \"E\": 44, \"S\": 65, \"W\": 29 },\n    { \"N\": 13, \"E\": 22, \"S\": 35, \"W\": 14 }\n  ],\n  \"notes\": \"Greens are split by y (arrival rate ÷ lane capacity) with S padded, since S is the bottleneck. Cycles are Webster plus margin on the rising windows (95, 127 s), 180 s at the 9:00 peak so every approach has about 1.1× capacity, and 100 s in the last window to clear any backlog.\"\n}\n```"
+  },
+  {
+    "task_id": "02-evening-rush",
+    "holdout": false,
+    "reference_delay": 58.742,
+    "score": 0.9383,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 62.61,
+    "blocked": 0,
+    "plan": [
+      {
+        "N": 22,
+        "E": 19,
+        "S": 22,
+        "W": 21
+      },
+      {
+        "N": 31,
+        "E": 26,
+        "S": 31,
+        "W": 28
+      },
+      {
+        "N": 40,
+        "E": 34,
+        "S": 39,
+        "W": 36
+      },
+      {
+        "N": 24,
+        "E": 20,
+        "S": 23,
+        "W": 23
+      }
+    ],
+    "turn_id": "01m6n3nr1r5zy5n09nmmjz5xyv",
+    "status": "done",
+    "reply": "**Method.** I used the dry discharge rates from the playbook: N 4980, E 4680, S 3195 and W 3000 vehicles per hour. The listed arrivals are hourly rates, so y = rate ÷ (lanes × flow) with no ×4. Lost time is L = 16 s per cycle, and the cycle is C = 29 / (1 − Y). The green budget is C − 16, split by y. I padded S slightly and checked that each approach's capacity is at least 1.1× its arrivals.\n\n| Window | y (N / E / S / W) | Y | Cycle | Greens (N / E / S / W) |\n|---|---|---|---|---|\n| 6:15 | 0.18 / 0.15 / 0.17 / 0.17 | 0.67 | Webster is about 88 s. I used 100 s because demand is rising, which gives 84 s of green. | 22 / 19 / 22 / 21 |\n| 6:30 | 0.21 / 0.18 / 0.20 / 0.19 | 0.78 | 132 s, which gives 116 s of green | 31 / 26 / 31 / 28 |\n| 6:45 (peak) | 0.22 / 0.19 / 0.21 / 0.20 | 0.82 | Webster is about 158 s. I used 165 s for the peak, which gives 149 s of green. | 40 / 34 / 39 / 36 |\n| 7:00 | 0.19 / 0.16 / 0.18 / 0.17 | 0.70 | Webster is about 98 s. I used about 106 s to clear any carried-over backlog, which gives 90 s of green. | 24 / 20 / 23 / 23 |\n\nAll greens are within the 7–150 s limit. The capacity checks give about 1.1–1.25× arrivals per approach. Queues should stay far below the gridlock limit of 40 vehicles per lane.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 22, \"E\": 19, \"S\": 22, \"W\": 21 },\n    { \"N\": 31, \"E\": 26, \"S\": 31, \"W\": 28 },\n    { \"N\": 40, \"E\": 34, \"S\": 39, \"W\": 36 },\n    { \"N\": 24, \"E\": 20, \"S\": 23, \"W\": 23 }\n  ],\n  \"notes\": \"Greens are split by y (arrivals divided by lane capacity), not by raw arrivals, using Webster cycles of about 100, 132, 165 and 106 s. The cycles run slightly long in the rising windows and the peak so no backlog builds, then shorten once demand falls. S and W are padded slightly because they have the lowest per-lane flow.\"\n}\n```"
+  },
+  {
+    "task_id": "03-monsoon-rain",
+    "holdout": false,
+    "reference_delay": 88.807,
+    "score": 0.8007,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 110.91,
+    "blocked": 0,
+    "plan": [
+      {
+        "N": 19,
+        "E": 30,
+        "S": 46,
+        "W": 20
+      },
+      {
+        "N": 26,
+        "E": 43,
+        "S": 67,
+        "W": 28
+      },
+      {
+        "N": 34,
+        "E": 55,
+        "S": 90,
+        "W": 35
+      },
+      {
+        "N": 22,
+        "E": 37,
+        "S": 60,
+        "W": 25
+      }
+    ],
+    "turn_id": "01m6n3p6cr7rjwbexawggmswbt",
+    "status": "done",
+    "reply": "**Method:** I used the rain discharge rates: N 1330, E 1280, S 870 and W 1190 vehicles per lane per hour. I took arrivals as hourly rates, so y = rate / (lanes × flow per lane). I used Webster's cycle C = 29 / (1 − Y). Total green is C − 16 s, because of 4 s all-red per phase. I split the green by y and padded S by about 8–10%. I used a margin on the rising windows and the longest cycle at the 9:15 peak.\n\n| window | y (N / E / S / W) | Y | Webster C | cycle used | greens (N / E / S / W) |\n|---|---|---|---|---|---|\n| 8:45 | 0.125 / 0.198 / 0.291 / 0.134 | 0.75 | 116 s | about 131 s | 19 / 30 / 46 / 20 |\n| 9:00 | 0.138 / 0.221 / 0.326 / 0.147 | 0.83 | 172 s | about 180 s | 26 / 43 / 67 / 28 |\n| 9:15 | 0.145 / 0.232 / 0.341 / 0.156 | 0.87 | 230 s | about 230 s | 34 / 55 / 90 / 35 |\n| 9:30 | 0.130 / 0.211 / 0.310 / 0.139 | 0.79 | 138 s | about 160 s | 22 / 37 / 60 / 25 |\n\nThe 9:30 cycle is longer than Webster so the backlog from the peak clears before the hour ends. All greens are within the 7–150 s limits.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 19, \"E\": 30, \"S\": 46, \"W\": 20 },\n    { \"N\": 26, \"E\": 43, \"S\": 67, \"W\": 28 },\n    { \"N\": 34, \"E\": 55, \"S\": 90, \"W\": 35 },\n    { \"N\": 22, \"E\": 37, \"S\": 60, \"W\": 25 }\n  ],\n  \"notes\": \"Rain flows (about 0.8 of dry) give Y of 0.75, 0.83, 0.87 and 0.79, so I used Webster cycles of about 130, 180, 230 and 160 s with green split by y. S gets about 40% of the green and a small pad. The cycles run a little long in the rising windows so no backlog starts, and the last cycle clears the peak backlog.\"\n}\n```"
+  },
+  {
+    "task_id": "04-midday-shift-change",
+    "holdout": false,
+    "reference_delay": 61.837,
+    "score": 0.9008,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 68.65,
+    "blocked": 0,
+    "plan": [
+      {
+        "N": 23,
+        "E": 18,
+        "S": 41,
+        "W": 22
+      },
+      {
+        "N": 34,
+        "E": 27,
+        "S": 62,
+        "W": 31
+      },
+      {
+        "N": 21,
+        "E": 16,
+        "S": 36,
+        "W": 19
+      },
+      {
+        "N": 15,
+        "E": 12,
+        "S": 28,
+        "W": 14
+      }
+    ],
+    "turn_id": "01m6n3pjc26njqe1752pmvqb2c",
+    "status": "done",
+    "reply": "I sized each window with the Webster method from the playbook. Arrivals are hourly rates, so y = rate ÷ (lanes × dry flow per lane). The dry flows are N 4980, E 4680, S 3195 and W 3000 vehicles per hour. Lost time is 16 s per cycle, so total green = C − 16.\n\n| Window | Y | Cycle C | Total green | Notes |\n|---|---|---|---|---|\n| 1:30 | 0.72 | about 120 s | 104 s | Demand is rising, so the cycle is about 15 s above Webster's 104 s. |\n| 1:45 | 0.83 | about 170 s | 154 s | This is the peak, so it gets the longest cycle. |\n| 2:00 | 0.72 | about 108 s | 92 s | Demand is falling, so the cycle is back near Webster. |\n| 2:15 | 0.61 | about 85 s | 69 s | Webster gives 74 s, but a cycle that short wastes too much on lost time. |\n\n- **Split:** I split green by y, not by arrivals. S has the highest y, so it gets the largest green, about 39% of the total.\n- **Capacity check:** Each approach discharges about 1.05 to 1.2 times its arrivals in every window, so no backlog should build up. In the peak window the tightest is W, at about 1.05 times its arrivals.\n- **Limits:** All greens are inside the 7–150 s limit. Queues should stay far below the 40-per-lane gridlock threshold.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 23, \"E\": 18, \"S\": 41, \"W\": 22 },\n    { \"N\": 34, \"E\": 27, \"S\": 62, \"W\": 31 },\n    { \"N\": 21, \"E\": 16, \"S\": 36, \"W\": 19 },\n    { \"N\": 15, \"E\": 12, \"S\": 28, \"W\": 14 }\n  ],\n  \"notes\": \"Greens are split by y (arrivals ÷ lane capacity) using Webster cycles of about 120, 170, 108 and 85 s. S gets the most green as the bottleneck. The rising and peak windows have a cycle margin so no backlog starts, and the last window uses a shorter cycle.\"\n}\n```"
+  },
+  {
+    "task_id": "05-holdout-ipl-night",
+    "holdout": true,
+    "reference_delay": 59.463,
+    "score": 0.8972,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 66.28,
+    "blocked": 0,
+    "plan": [
+      {
+        "N": 24,
+        "E": 12,
+        "S": 17,
+        "W": 21
+      },
+      {
+        "N": 42,
+        "E": 21,
+        "S": 28,
+        "W": 39
+      },
+      {
+        "N": 52,
+        "E": 25,
+        "S": 35,
+        "W": 48
+      },
+      {
+        "N": 23,
+        "E": 11,
+        "S": 16,
+        "W": 19
+      }
+    ],
+    "turn_id": "01m6n3q2j0sq0amq93atyzv6w1",
+    "status": "done",
+    "reply": "**Plan basis:** I took the conditions as dry night traffic and used the playbook's dry per-lane flows. The listed numbers are hourly rates, so y = rate ÷ (lanes × flow per lane), with no ×4. Lost time is 16 s per cycle, and Webster's cycle is C = 29 / (1 − Y). Greens are split by y, with S padded by about 10%. Every green is inside the 7–150 s limit.\n\n| Window | Y | Cycle | Greens (N / E / S / W) |\n|---|---|---|---|\n| 10:30 | 0.47 | 90 s | 24 / 12 / 17 / 21 |\n| 10:45 | 0.80 | 146 s | 42 / 21 / 28 / 39 |\n| 11:00 | 0.83 | 176 s | 52 / 25 / 35 / 48 |\n| 11:15 | 0.54 | 85 s | 23 / 11 / 16 / 19 |\n\n- **10:30:** Webster alone would give about 55 s. I used 90 s because demand roughly doubles in the next window, and a longer cycle stops a backlog from starting.\n- **10:45 and 11:00:** These are the peak windows. Capacity is about 1.07–1.2 times arrivals on every approach, so nothing builds toward the 40-per-lane gridlock limit.\n- **11:15:** Demand is falling, so I cut the cycle to about 85 s. That limits the average wait and still leaves room to clear any small carry-over before the hour ends.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 24, \"E\": 12, \"S\": 17, \"W\": 21 },\n    { \"N\": 42, \"E\": 21, \"S\": 28, \"W\": 39 },\n    { \"N\": 52, \"E\": 25, \"S\": 35, \"W\": 48 },\n    { \"N\": 23, \"E\": 11, \"S\": 16, \"W\": 19 }\n  ],\n  \"notes\": \"Greens split by y (rate / lanes×flow) using Webster cycles of about 90, 146, 176 and 85 s. Cycles are longer than Webster in the rising first window and shorter in the falling last window. S is padded by about 10%, and every approach has about 1.07–1.2 times capacity over arrivals, so there is no gridlock.\"\n}\n```"
+  },
+  {
+    "task_id": "06-holdout-metro-works",
+    "holdout": true,
+    "reference_delay": 61.749,
+    "score": 0.8234,
+    "passed": false,
+    "parsed": true,
+    "avg_delay": 74.99,
+    "blocked": 0,
+    "plan": [
+      {
+        "N": 11,
+        "E": 26,
+        "S": 30,
+        "W": 12
+      },
+      {
+        "N": 18,
+        "E": 41,
+        "S": 44,
+        "W": 21
+      },
+      {
+        "N": 28,
+        "E": 60,
+        "S": 66,
+        "W": 30
+      },
+      {
+        "N": 13,
+        "E": 28,
+        "S": 30,
+        "W": 13
+      }
+    ],
+    "turn_id": "01m6n3qhvmypezvqmdxnd3p0sw",
+    "status": "done",
+    "reply": "**Method:** I used the playbook's measured dry discharge rates. E has only 2 lanes because of the closure, so its capacity is about 3120 vehicles per hour. Storage is 40 vehicles per lane, which is 80 for E and W and 120 for N and S. I set each approach's y as its hourly arrival rate divided by (lanes × flow per lane). The arrival numbers are hourly rates, so there is no ×4.\n\n| window | y (N / E / S / W) | Y | Webster C | cycle used | total green (C−16) |\n|---|---|---|---|---|---|\n| 8:30 | 0.102 / 0.218 / 0.225 / 0.113 | 0.66 | 85 s | 95 s | 79 s |\n| 8:45 | 0.120 / 0.256 / 0.266 / 0.133 | 0.78 | 129 s | 140 s | 124 s |\n| 9:00 | 0.131 / 0.276 / 0.288 / 0.143 | 0.84 | 179 s | 200 s | 184 s |\n| 9:15 | 0.108 / 0.231 / 0.238 / 0.120 | 0.70 | 96 s | 100 s | 84 s |\n\n- **Rising windows:** I added margin to the cycle in the first three windows so no backlog starts. 9:00 is the peak and gets the longest cycle.\n- **Green split:** I split green by y share and padded S by about 10%, since it is the bottleneck.\n- **Capacity check:** Every approach discharges at least 1.03× its arrivals in every window.\n  - The tightest approaches are N at 8:30 (1.03×) and W at 9:00 (1.05×).\n  - S has about 1.15–1.2× at 8:45 and 9:00, and more at the other times.\n- **Gridlock:** I expect queues to stay well below the 80-vehicle limit on E and W, so there should be no gridlock.\n- **Last window:** At 9:15, Y falls to 0.70, so I cut the cycle to 100 s to clear any leftover queue.\n\n```json\n{\n  \"plan\": [\n    { \"N\": 11, \"E\": 26, \"S\": 30, \"W\": 12 },\n    { \"N\": 18, \"E\": 41, \"S\": 44, \"W\": 21 },\n    { \"N\": 28, \"E\": 60, \"S\": 66, \"W\": 30 },\n    { \"N\": 13, \"E\": 28, \"S\": 30, \"W\": 13 }\n  ],\n  \"notes\": \"Webster-style cycles (95/140/200/100 s) with green split by y = rate/(lanes×flow), counting E as 2 lanes after the closure; S padded ~10% as the bottleneck, longest cycle at the 9:00 peak with margin on the rising windows, and a short cycle in the last window to clear queues.\"\n}\n```"
+  }
+]
