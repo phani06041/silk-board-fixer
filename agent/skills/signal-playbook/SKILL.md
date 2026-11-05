@@ -6,28 +6,30 @@ description: What you know about Silk Board junction and how to size signal gree
 # Signal playbook
 
 ## Measured discharge (vehicles per lane per hour of busy green)
-- Dry: N ~1660 per lane (3 lanes), E ~1560 (3 lanes), W ~1500 (2 lanes), S ~1065 (3 lanes). These were re-measured and are stable to ±3%.
+- Dry: N ~1650 per lane (3 lanes), E ~1565 (3 lanes), W ~1500 (2 lanes), S ~1060 (3 lanes). Re-measured over several runs, stable to ±3% whatever the green length or window.
 - S is the bottleneck. Its per-lane flow is about 35% below N's. Its lane capacity is about 3200/h against N's 5000/h.
-- Heavy rain or monsoon: N ~1330, E ~1280, S ~870, W ~1190. That is about 0.80 of dry flow.
+- Heavy rain or monsoon: N ~1330, E ~1275, S ~860, W ~1200. That is about 0.80 of dry flow.
 - Storage is about 120 vehicles per approach. Past that, vehicles are turned away (gridlock). Keep queues below 100. No run has come close: max queues were 15-75.
 - Each green loses ~2-3 s at the start (startup). Effective green = green − 3 s. A 12 s green gives only ~9 s of discharge, a 25% loss.
 
 ## Units (check this first)
-- The scenario's arrival numbers are hourly rates. Simulated arrivals in a 15-minute window were about one quarter of the listed number, e.g. a listed 760 gave about 190 vehicles.
+- The scenario's arrival numbers are hourly rates. Simulated arrivals in a 15-minute window were about one quarter of the listed number, e.g. a listed 760 gave about 190 vehicles. Actual arrivals are noisy (±10-20% per approach per window).
 - So y = listed_rate / (lanes × flow_per_lane), with no ×4. If the numbers are clearly per-window counts, multiply by 4.
-- Typical dry Y (sum of y) is 0.65 in a light window and 0.83-0.85 at the peak. Monsoon peak Y is about 0.9.
+- Typical dry Y (sum of y) is 0.65-0.70 in a light window and 0.80-0.85 at the peak. Monsoon peak Y is about 0.9.
 
 ## Lessons from runs
-- Webster cycles with the right Y worked (0.90-0.98, no gridlock). Pure y-proportional greens were best.
-- The last run lost points through "padding S by ~10% from the lowest-y approach". S then had spare green: its queue emptied, its waits were 30-65 s and it served fewer than its capacity. N and W were short-changed: they had waits of 100-320 s, queues of 40-70, and backlog carried into later windows. Do NOT pad S. Do not take green from N or W.
-- N (lowest y in the morning and in rain) consistently had the longest waits. Tiny greens (12-20 s) in a long cycle mean long reds, startup loss and backlog. Give every approach at least ~18-20 s of green when C ≥ 120 s, and ~12 s when C < 100 s.
+- Webster cycles with the right Y worked (scores 0.97-1.00 in morning, midday and rain; no gridlock). Pure y-proportional greens were best. Do not re-tune what works.
+- Do NOT pad S. Spare S green is wasted and N and W get short-changed (waits 100-320 s). Do not take green from N or W.
+- Tiny greens (12-20 s) in a long cycle mean long reds, startup loss and backlog. Give every approach at least ~18-20 s of green when C ≥ 120 s, and ~12 s when C < 100 s.
 - Adding +10-15 s of cycle margin did not help. Cycles above Webster raise every approach's wait (about half its red). Use C = Webster.
-- Last window: shortening C to a bare Webster left a queue (40 in dry, 125 in rain). Size the last window on arrivals plus carried backlog, and keep it from falling more than ~20% below the peak window's C in rain.
+- Waits track the previous window's carried queue: waits climb through the peak (40 → 70 → 100 s) and the last window's approach with a backlog (e.g. N in the evening) had the worst wait. The evening run, the weakest, dropped C from ~190 to ~105 in the last window; N then had 100 s waits, 52 queued, and 34 vehicles were left at the end.
+- Last window: do not cut C sharply. Keep C at least ~75-80% of the peak window's C (in rain ~80%), size greens on arrivals + backlog (peak-window leftover is ~10-15% of arrivals), and make sure N, which has the most arrivals in the evening, still passes check 7.
 - Splitting green by raw arrivals starves S. Split by y, not by arrivals.
 - Lost time is ~4 s per phase, ~16 s per cycle. Very short cycles (greens summing below ~70 s) waste a large share of the cycle and leave queues.
+- Wait is dominated by red time. In the evening, W (2 lanes, y share ~0.17-0.2) had the longest waits in early windows; keep W at its y share and never below, and give W the floor first.
 
 ## Method (every window)
-1. y per approach = (listed rate + backlog×4) / (lanes × flow_per_lane). Use the rain flows in rain. Backlog is the estimated vehicles still queued from the previous window.
+1. y per approach = (listed rate + backlog×4) / (lanes × flow_per_lane). Use the rain flows in rain. Backlog is the estimated vehicles still queued from the previous window (0 in early windows; ~10-15% of last window's arrivals after the peak).
 2. Y = sum of the four y values. L = 16 s.
 3. C = 29 / (1 − Y).
    - Y 0.6-0.7: C ~80-100 s.
@@ -40,12 +42,12 @@ description: What you know about Silk Board junction and how to size signal gree
 6. Enforce the rules' min and max green. If a max binds on S, give S its max and shrink the others as little as is safe.
 7. Capacity check per approach: lanes × flow × (green − 3) / C × (900/C cycles) ≥ 1.05-1.10 × (arrivals + backlog). Every approach must pass, N and W included. If one fails, move green from the approach with the most slack, or lengthen C. Do not over-provision beyond ~1.15×; spare green is wasted.
 8. Rising demand (windows before the peak, or rain onset): use Webster for that window's Y plus ~5-10% extra on the approaches whose y is rising. Keep the cycle length at Webster. Never leave backlog.
-9. Falling or last windows: shorten C to Webster, but make sure every approach clears its arrivals plus backlog (check 7). A queue left at the end of the hour is a cost.
+9. Falling or last windows: C = Webster for Y with backlog included, but not below ~75-80% of the peak C (see Lessons). Every approach must clear its arrivals plus backlog (check 7). A queue left at the end of the hour is a cost.
 10. In rain, recompute with the 0.8 flows from the first window. Y rises sharply, so use long cycles from the start.
 
 ## Approach notes
 - Weekday morning: S and E are heavy, N and W are light. S has the highest y, so it gets the most green. E is next. N and W still need their floor green and capacity.
-- Weekday evening: N has the most arrivals, but y is fairly even across N, E, S and W (~0.19-0.22 each at the peak). Give roughly equal-to-balanced greens. W's waits were the longest in the evening, so keep W at its y share, not below.
+- Weekday evening: N has the most arrivals, but y is fairly even across N, E, S and W (~0.17-0.22 each at the peak). Give roughly equal-to-balanced greens. W's waits were the longest in the evening, so keep W at its y share, not below. N's backlog in the last window is the main risk.
 - Midday: S and N are heavy, and S has the highest y. E and W are lighter; do not let E fall below ~18 s.
-- Rain: S ~870 per lane means S needs ~35-40% of the total green at morning-type loads, but N, E and W still need y-proportional greens (N ~15%, W ~15%).
+- Rain: S ~860 per lane means S needs ~35-40% of the total green at morning-type loads, but N, E and W still need y-proportional greens (N ~15%, W ~15%).
 - The approach with the highest y gets the largest green, not the one with the most arrivals.
